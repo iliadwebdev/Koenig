@@ -28,7 +28,6 @@ jobs:
             - uses: actions/setup-node@v4
               with:
                   node-version: '22.13.1'
-                  cache: yarn
 
             - name: Install dependencies
               run: yarn install --frozen-lockfile
@@ -57,7 +56,6 @@ jobs:
             - uses: actions/setup-node@v4
               with:
                   node-version: '22.13.1'
-                  cache: yarn
                   registry-url: 'https://registry.npmjs.org'
 
             - name: Install dependencies
