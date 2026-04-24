@@ -35,7 +35,7 @@ test.describe('Drag Drop Paste Plugin', async function () {
         await assertHTML(page, html`
             <div data-lexical-decorator="true" contenteditable="false">
                 <div data-kg-card-editing="false" data-kg-card-selected="true" data-kg-card="image">
-                    <figure>
+                    <figure data-kg-card-width="regular">
                         <div>
                             <img alt="" src="blob:..." />
                         </div>

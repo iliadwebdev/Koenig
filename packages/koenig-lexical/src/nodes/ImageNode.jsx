@@ -190,9 +190,14 @@ export class ImageNode extends BaseImageNode {
 
         if (element && maxWidthPx && element.tagName === 'FIGURE') {
             element.setAttribute('data-kg-max-width', String(maxWidthPx));
-            element.style.maxWidth = `${maxWidthPx}px`;
-            element.style.margin = '0 auto';
-            element.style.display = 'block';
+            // apply the inline size to the <img>, not the <figure>, so the caption
+            // below stays natural-width instead of being squished alongside the image
+            const img = element.querySelector('img');
+            if (img) {
+                img.style.maxWidth = `${maxWidthPx}px`;
+                img.style.margin = '0 auto';
+                img.style.display = 'block';
+            }
         }
 
         return result;

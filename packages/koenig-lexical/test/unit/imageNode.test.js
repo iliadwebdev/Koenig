@@ -89,14 +89,19 @@ describe('ImageNode', function () {
     });
 
     describe('exportDOM', function () {
-        it('emits data-kg-max-width and inline style when set', editorTest(function () {
+        it('emits data-kg-max-width on the figure and inline style on the img when set', editorTest(function () {
             const node = $createImageNode({src: 'https://example.com/a.png', alt: '', maxWidthPx: 500});
             const {element} = node.exportDOM({});
             expect(element.tagName).toBe('FIGURE');
             expect(element.getAttribute('data-kg-max-width')).toBe('500');
-            expect(element.style.maxWidth).toBe('500px');
-            expect(element.style.margin).toBe('0px auto');
-            expect(element.style.display).toBe('block');
+            // figure itself is not constrained so the caption stays full-width
+            expect(element.style.maxWidth).toBe('');
+
+            const img = element.querySelector('img');
+            expect(img).not.toBeNull();
+            expect(img.style.maxWidth).toBe('500px');
+            expect(img.style.margin).toBe('0px auto');
+            expect(img.style.display).toBe('block');
         }));
 
         it('does not emit max-width attributes when unset', editorTest(function () {
@@ -104,7 +109,8 @@ describe('ImageNode', function () {
             const {element} = node.exportDOM({});
             expect(element.tagName).toBe('FIGURE');
             expect(element.hasAttribute('data-kg-max-width')).toBe(false);
-            expect(element.style.maxWidth).toBe('');
+            const img = element.querySelector('img');
+            expect(img.style.maxWidth).toBe('');
         }));
     });
 

@@ -9,7 +9,7 @@ import {ProgressBar} from '../ProgressBar';
 import {isGif} from '../../../utils/isGif';
 import {openFileSelection} from '../../../utils/openFileSelection';
 
-function PopulatedImageCard({src, alt, previewSrc, imageUploader, imageCardDragHandler, imageFileDragHandler, isPinturaEnabled, openImageEditor, onFileChange}) {
+function PopulatedImageCard({src, alt, previewSrc, imageUploader, imageCardDragHandler, imageFileDragHandler, isPinturaEnabled, openImageEditor, onFileChange, maxWidthPx}) {
     const progressStyle = {
         width: `${imageUploader.progress?.toFixed(0)}%`
     };
@@ -21,6 +21,11 @@ function PopulatedImageCard({src, alt, previewSrc, imageUploader, imageCardDragH
         imageCardDragHandler?.setRef(element);
     }
 
+    // maxWidthPx is applied on the img (not the figure) so the caption below
+    // stays natural-width — otherwise constraining the figure would squish
+    // the caption text alongside the image.
+    const imgStyle = maxWidthPx ? {maxWidth: `${maxWidthPx}px`} : undefined;
+
     return (
         <div ref={setRef} className="not-kg-prose group/image relative">
             <img
@@ -28,6 +33,7 @@ function PopulatedImageCard({src, alt, previewSrc, imageUploader, imageCardDragH
                 className={`mx-auto block ${previewSrc ? 'opacity-40' : ''}`}
                 data-testid={imageUploader.isLoading ? 'image-card-loading' : 'image-card-populated'}
                 src={previewSrc ? previewSrc : src}
+                style={imgStyle}
             />
             {imageUploader.isLoading ?
                 <div className="absolute inset-0 flex min-w-full items-center justify-center overflow-hidden bg-white/50" data-testid="upload-progress">
@@ -102,7 +108,8 @@ const ImageHolder = ({
     imageCardDragHandler,
     imageFileDragHandler,
     isPinturaEnabled,
-    openImageEditor
+    openImageEditor,
+    maxWidthPx
 }) => {
     if (previewSrc || src) {
         return (
@@ -112,6 +119,7 @@ const ImageHolder = ({
                 imageFileDragHandler={imageFileDragHandler}
                 imageUploader={imageUploader}
                 isPinturaEnabled={isPinturaEnabled}
+                maxWidthPx={maxWidthPx}
                 openImageEditor={openImageEditor}
                 previewSrc={previewSrc}
                 src={src}
@@ -140,6 +148,7 @@ export function ImageCard({
     setAltText,
     setFigureRef,
     fileInputRef,
+    cardWidth,
     maxWidthPx,
     previewSrc,
     imageUploader,
@@ -162,20 +171,21 @@ export function ImageCard({
         }
     };
 
-    const figureStyle = maxWidthPx
-        ? {maxWidth: `${maxWidthPx}px`, margin: '0 auto', display: 'block'}
-        : undefined;
+    // max-width-in-pixels is applied inside on the <img>, not here on the
+    // figure — otherwise caption text gets squished alongside the image.
+    // We still tag the figure for CSS hooks and attribute-based styling.
     const figureDataProps = maxWidthPx ? {'data-kg-max-width': String(maxWidthPx)} : {};
 
     return (
         <>
-            <figure ref={figureRef} style={figureStyle} {...figureDataProps}>
+            <figure ref={figureRef} data-kg-card-width={cardWidth} {...figureDataProps}>
                 <ImageHolder
                     altText={altText}
                     imageCardDragHandler={imageCardDragHandler}
                     imageFileDragHandler={imageFileDragHandler}
                     imageUploader={imageUploader}
                     isPinturaEnabled={isPinturaEnabled}
+                    maxWidthPx={maxWidthPx}
                     openImageEditor={openImageEditor}
                     previewSrc={previewSrc}
                     setFileInputRef={setFileInputRef}
@@ -208,7 +218,8 @@ ImageHolder.propTypes = {
     imageFileDragHandler: PropTypes.object,
     imageCardDragHandler: PropTypes.object,
     isPinturaEnabled: PropTypes.bool,
-    openImageEditor: PropTypes.func
+    openImageEditor: PropTypes.func,
+    maxWidthPx: PropTypes.number
 };
 
 PopulatedImageCard.propTypes = {
@@ -220,7 +231,8 @@ PopulatedImageCard.propTypes = {
     imageFileDragHandler: PropTypes.object,
     isPinturaEnabled: PropTypes.bool,
     openImageEditor: PropTypes.func,
-    onFileChange: PropTypes.func
+    onFileChange: PropTypes.func,
+    maxWidthPx: PropTypes.number
 };
 
 EmptyImageCard.propTypes = {
@@ -240,6 +252,7 @@ ImageCard.propTypes = {
     setAltText: PropTypes.func,
     setFigureRef: PropTypes.func,
     fileInputRef: PropTypes.object,
+    cardWidth: PropTypes.string,
     maxWidthPx: PropTypes.number,
     previewSrc: PropTypes.string,
     imageUploader: PropTypes.object,

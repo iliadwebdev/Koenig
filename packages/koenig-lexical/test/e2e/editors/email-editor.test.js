@@ -215,8 +215,11 @@ test.describe('Koenig Editor with email template nodes', async function () {
             await page.click('[data-kg-card="image"]');
             await expect(page.locator('[data-kg-card-toolbar="image"]')).toBeVisible();
 
-            // fork: percentage-based width presets have been removed in favour of
-            // a numeric max-width input that works in every editor mode.
+            await expect(page.locator('[data-kg-card-toolbar="image"] button[aria-label="Regular width"]')).toHaveCount(0);
+            await expect(page.locator('[data-kg-card-toolbar="image"] button[aria-label="Wide width"]')).toHaveCount(0);
+            await expect(page.locator('[data-kg-card-toolbar="image"] button[aria-label="Full width"]')).toHaveCount(0);
+
+            // fork adds a numeric max-width input that works regardless of mode
             await expect(page.locator('[data-testid="image-max-width-input"]')).toBeVisible();
         });
     });

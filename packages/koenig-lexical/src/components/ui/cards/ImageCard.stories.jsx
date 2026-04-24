@@ -26,6 +26,10 @@ const story = {
                 defaultValue: displayOptions.Default
             }
         },
+        cardWidth: {
+            options: ['regular', 'wide', 'full'],
+            control: {type: 'radio'}
+        },
         maxWidthPx: {
             control: {type: 'number'}
         }
@@ -71,6 +75,7 @@ Empty.args = {
 export const Uploading = Template.bind({});
 Uploading.args = {
     display: 'Selected',
+    cardWidth: 'regular',
     maxWidthPx: null,
     setAltText: true,
     caption: '',
@@ -89,6 +94,7 @@ Uploading.args = {
 export const Populated = Template.bind({});
 Populated.args = {
     display: 'Selected',
+    cardWidth: 'regular',
     maxWidthPx: null,
     src: 'https://static.ghost.org/v4.0.0/images/feature-image.jpg',
     setAltText: true,
@@ -106,6 +112,7 @@ Populated.args = {
 export const Errors = Template.bind({});
 Errors.args = {
     display: 'Selected',
+    cardWidth: 'regular',
     maxWidthPx: null,
     setAltText: true,
     caption: '',
@@ -121,6 +128,7 @@ Errors.args = {
 export const DraggedOver = Template.bind({});
 DraggedOver.args = {
     display: 'Selected',
+    cardWidth: 'regular',
     maxWidthPx: null,
     setAltText: true,
     caption: '',
