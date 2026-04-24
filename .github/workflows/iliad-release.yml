@@ -1,0 +1,83 @@
+name: Iliad CI & Publish
+
+# Fork-specific workflow. Runs on the iliad/* branches and tags.
+# - CI: build + unit tests on pushes / PRs against iliad/main
+# - Publish: npm publish of @iliad.dev/koenig-lexical on v* tags
+
+on:
+    pull_request:
+        branches:
+            - 'iliad/**'
+    push:
+        branches:
+            - 'iliad/**'
+        tags:
+            - 'v*'
+
+jobs:
+    ci:
+        name: Build & unit tests
+        if: github.event_name != 'push' || startsWith(github.ref, 'refs/heads/iliad/')
+        runs-on: ubuntu-latest
+        env:
+            FORCE_COLOR: 1
+            NODE_OPTIONS: '--max_old_space_size=8192'
+            CI: true
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '22.13.1'
+                  cache: yarn
+
+            - name: Install dependencies
+              run: yarn install --frozen-lockfile
+
+            - name: Build monorepo packages
+              run: yarn lerna run build --scope @iliad.dev/koenig-lexical --include-dependencies
+
+            - name: Unit tests (koenig-lexical)
+              run: yarn workspace @iliad.dev/koenig-lexical test:unit
+
+            - name: Lint (koenig-lexical)
+              run: yarn workspace @iliad.dev/koenig-lexical lint
+
+    publish:
+        name: Publish to npm
+        if: startsWith(github.ref, 'refs/tags/v')
+        needs: ci
+        runs-on: ubuntu-latest
+        env:
+            FORCE_COLOR: 1
+            NODE_OPTIONS: '--max_old_space_size=8192'
+            CI: true
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '22.13.1'
+                  cache: yarn
+                  registry-url: 'https://registry.npmjs.org'
+
+            - name: Install dependencies
+              run: yarn install --frozen-lockfile
+
+            - name: Build monorepo packages
+              run: yarn lerna run build --scope @iliad.dev/koenig-lexical --include-dependencies
+
+            - name: Verify tag matches package version
+              run: |
+                  pkg_version=$(node -p "require('./packages/koenig-lexical/package.json').version")
+                  tag_version=${GITHUB_REF#refs/tags/v}
+                  if [ "$pkg_version" != "$tag_version" ]; then
+                      echo "Tag version ($tag_version) does not match package.json version ($pkg_version)" >&2
+                      exit 1
+                  fi
+
+            - name: Publish @iliad.dev/koenig-lexical
+              run: npm publish --access public
+              working-directory: packages/koenig-lexical
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -10,10 +10,10 @@ import {ActionToolbar} from '../components/ui/ActionToolbar';
 import {ImageCard} from '../components/ui/cards/ImageCard';
 import {ImageUploadForm} from '../components/ui/ImageUploadForm';
 import {LinkInput} from '../components/ui/LinkInput';
+import {MAX_WIDTH_PX_MAX, MAX_WIDTH_PX_MIN} from './ImageNode';
 import {SnippetActionToolbar} from '../components/ui/SnippetActionToolbar';
-import {ToolbarMenu, ToolbarMenuItem, ToolbarMenuSeparator} from '../components/ui/ToolbarMenu';
+import {ToolbarMenu, ToolbarMenuInput, ToolbarMenuItem, ToolbarMenuSeparator} from '../components/ui/ToolbarMenu';
 import {dataSrcToFile} from '../utils/dataSrcToFile.js';
-import {getAllowedImageCardWidths, getDefaultImageCardWidth} from '../utils/image-card-widths';
 import {getImageDimensions} from '../utils/getImageDimensions.js';
 import {getImageFilenameFromSrc} from '../utils/getImageFilenameFromSrc';
 import {imageUploadHandler} from '../utils/imageUploadHandler';
@@ -21,11 +21,11 @@ import {isGif} from '../utils/isGif';
 import {openFileSelection} from '../utils/openFileSelection';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
-export function ImageNodeComponent({nodeKey, initialFile, src, altText, captionEditor, captionEditorInitialState, triggerFileDialog, previewSrc, href}) {
+export function ImageNodeComponent({nodeKey, initialFile, src, altText, captionEditor, captionEditorInitialState, triggerFileDialog, previewSrc, href, maxWidthPx}) {
     const [editor] = useLexicalComposerContext();
     const [showLink, setShowLink] = React.useState(false);
     const {fileUploader, cardConfig} = React.useContext(KoenigComposerContext);
-    const {isSelected, cardWidth, setCardWidth} = React.useContext(CardContext);
+    const {isSelected} = React.useContext(CardContext);
     const fileInputRef = React.useRef();
     const toolbarFileInputRef = React.useRef();
     const [showSnippetToolbar, setShowSnippetToolbar] = React.useState(false);
@@ -68,14 +68,6 @@ export function ImageNodeComponent({nodeKey, initialFile, src, altText, captionE
 
     const {isEnabled: isPinturaEnabled, openEditor: openImageEditor}
         = usePinturaEditor({config: cardConfig.pinturaConfig});
-        
-    const allowedImageCardWidths = React.useMemo(() => {
-        return getAllowedImageCardWidths(cardConfig?.image?.allowedWidths);
-    }, [cardConfig?.image?.allowedWidths]);
-    const defaultImageCardWidth = React.useMemo(() => {
-        return getDefaultImageCardWidth(allowedImageCardWidths);
-    }, [allowedImageCardWidths]);
-    const hasMultipleImageCardWidths = allowedImageCardWidths.length > 1;
 
     React.useEffect(() => {
         if (!src?.startsWith('data:') || imageUploader.isLoading) {
@@ -187,23 +179,12 @@ export function ImageNodeComponent({nodeKey, initialFile, src, altText, captionE
         });
     });
 
-    const handleImageCardResize = React.useCallback((newWidth) => {
-        if (!allowedImageCardWidths.includes(newWidth)) {
-            return;
-        }
-
+    const handleMaxWidthPxChange = React.useCallback((value) => {
         editor.update(() => {
             const node = $getNodeByKey(nodeKey);
-            node.cardWidth = newWidth; // this is a property on the node, not the card
-            setCardWidth(newWidth); // sets the state of the toolbar component
+            node.maxWidthPx = value;
         });
-    }, [allowedImageCardWidths, editor, nodeKey, setCardWidth]);
-
-    React.useEffect(() => {
-        if (!allowedImageCardWidths.includes(cardWidth)) {
-            handleImageCardResize(defaultImageCardWidth);
-        }
-    }, [allowedImageCardWidths, cardWidth, defaultImageCardWidth, handleImageCardResize]);
+    }, [editor, nodeKey]);
 
     const cancelLinkAndReselect = () => {
         setShowLink(false);
@@ -228,13 +209,13 @@ export function ImageNodeComponent({nodeKey, initialFile, src, altText, captionE
                 altText={altText}
                 captionEditor={captionEditor}
                 captionEditorInitialState={captionEditorInitialState}
-                cardWidth={cardWidth}
                 fileInputRef={fileInputRef}
                 imageCardDragHandler={imageCardDragHandler}
                 imageFileDragHandler={imageFileDragHandler}
                 imageUploader={imageUploader}
                 isPinturaEnabled={isPinturaEnabled}
                 isSelected={isSelected}
+                maxWidthPx={maxWidthPx}
                 openImageEditor={openImageEditor}
                 previewSrc={previewSrc}
                 setAltText={setAltText}
@@ -273,28 +254,18 @@ export function ImageNodeComponent({nodeKey, initialFile, src, altText, captionE
                     onFileChange={onFileChange}
                 />
                 <ToolbarMenu>
-                    <ToolbarMenuItem
-                        hide={isGif(src) || !hasMultipleImageCardWidths || !allowedImageCardWidths.includes('regular')}
-                        icon="imgRegular"
-                        isActive={cardWidth === 'regular'}
-                        label="Regular width"
-                        onClick={() => handleImageCardResize('regular')}
+                    <ToolbarMenuInput
+                        dataTestId="image-max-width-input"
+                        hide={isGif(src)}
+                        label="Max width"
+                        max={MAX_WIDTH_PX_MAX}
+                        min={MAX_WIDTH_PX_MIN}
+                        placeholder="auto"
+                        suffix="px"
+                        value={maxWidthPx ?? ''}
+                        onChange={handleMaxWidthPxChange}
                     />
-                    <ToolbarMenuItem
-                        hide={isGif(src) || !hasMultipleImageCardWidths || !allowedImageCardWidths.includes('wide')}
-                        icon="imgWide"
-                        isActive={cardWidth === 'wide'}
-                        label="Wide width"
-                        onClick={() => handleImageCardResize('wide')}
-                    />
-                    <ToolbarMenuItem
-                        hide={isGif(src) || !hasMultipleImageCardWidths || !allowedImageCardWidths.includes('full')}
-                        icon="imgFull"
-                        isActive={cardWidth === 'full'}
-                        label="Full width"
-                        onClick={() => handleImageCardResize('full')}
-                    />
-                    <ToolbarMenuSeparator hide={isGif(src) || !hasMultipleImageCardWidths} />
+                    <ToolbarMenuSeparator hide={isGif(src)} />
                     <ToolbarMenuItem icon="link" isActive={href || false} label="Link" onClick = {() => {
                         setShowLink(true);
                     }} />

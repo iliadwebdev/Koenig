@@ -13,6 +13,7 @@ import LinkIcon from '../../assets/icons/kg-link.svg?react';
 import QuoteIcon from '../../assets/icons/kg-quote.svg?react';
 import QuoteOneIcon from '../../assets/icons/kg-quote-1.svg?react';
 import QuoteTwoIcon from '../../assets/icons/kg-quote-2.svg?react';
+import React from 'react';
 import SnippetIcon from '../../assets/icons/kg-snippet.svg?react';
 import TrashIcon from '../../assets/icons/kg-trash.svg?react';
 import WandIcon from '../../assets/icons/kg-wand.svg?react';
@@ -82,5 +83,76 @@ export function ToolbarMenuSeparator({hide}) {
 
     return (
         <li className="m-0 w-px self-stretch bg-grey-300/80 dark:bg-grey-900"></li>
+    );
+}
+
+export function ToolbarMenuInput({
+    label,
+    value,
+    onChange,
+    placeholder,
+    min,
+    max,
+    suffix,
+    dataTestId,
+    hide
+}) {
+    const [draft, setDraft] = React.useState(value ?? '');
+
+    React.useEffect(() => {
+        setDraft(value ?? '');
+    }, [value]);
+
+    if (hide) {
+        return null;
+    }
+
+    const commit = () => {
+        if (draft === '' || draft === null) {
+            onChange(null);
+            return;
+        }
+        const parsed = parseInt(draft, 10);
+        if (!Number.isFinite(parsed)) {
+            setDraft(value ?? '');
+            return;
+        }
+        onChange(parsed);
+    };
+
+    const handleKeyDown = (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            event.currentTarget.blur();
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            setDraft(value ?? '');
+            event.currentTarget.blur();
+        }
+    };
+
+    return (
+        <li className="group relative m-0 flex items-center p-0 first:m-0">
+            <label aria-label={label} className="my-1 flex h-8 items-center rounded-md bg-white px-2 dark:bg-grey-950">
+                <input
+                    aria-label={label}
+                    className="w-12 bg-transparent text-center text-sm text-black outline-none placeholder:text-grey-500 dark:text-white"
+                    data-testid={dataTestId}
+                    inputMode="numeric"
+                    max={max}
+                    min={min}
+                    placeholder={placeholder}
+                    type="number"
+                    value={draft}
+                    onBlur={commit}
+                    onChange={e => setDraft(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                />
+                {suffix && (
+                    <span className="ml-1 select-none text-xs text-grey-600 dark:text-grey-400">{suffix}</span>
+                )}
+            </label>
+            <Tooltip label={label} />
+        </li>
     );
 }

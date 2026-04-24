@@ -1,8 +1,12 @@
 {
-  "name": "@tryghost/koenig-lexical",
-  "version": "1.7.30",
-  "repository": "https://github.com/TryGhost/Koenig/tree/master/packages/koenig-lexical",
-  "author": "Ghost Foundation",
+  "name": "@iliad.dev/koenig-lexical",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iliadwebdev/Koenig.git",
+    "directory": "packages/koenig-lexical"
+  },
+  "author": "Iliad Web Development",
   "license": "MIT",
   "type": "module",
   "files": [
@@ -10,6 +14,9 @@
     "README.md",
     "dist/"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/koenig-lexical.umd.js",
   "module": "./dist/koenig-lexical.js",
   "exports": {

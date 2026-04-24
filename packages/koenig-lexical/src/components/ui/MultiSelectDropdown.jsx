@@ -108,7 +108,7 @@ export function MultiSelectDropdown({placeholder = '', items = [], availableItem
     return (
         <div className="relative z-0 font-sans text-sm font-normal" data-testid={dataTestId}>
             <div
-                className={`relative flex w-full cursor-text flex-wrap gap-1 rounded-lg border ${isFocused ? 'border-green bg-white shadow-[0_0_0_2px_rgba(48,207,67,.25)] dark:bg-grey-925' : 'border-grey-100 bg-grey-100 dark:border-transparent dark:bg-grey-900 dark:hover:bg-grey-925'} px-[10px] py-2 pr-5 font-sans text-sm font-normal leading-[1.5] text-grey-900 placeholder:text-grey-500 focus-visible:outline-none dark:text-white dark:selection:bg-grey-800 dark:placeholder:text-grey-700`}
+                className={`relative flex w-full cursor-text flex-wrap gap-1 rounded-lg border ${isFocused ? 'border-green bg-white shadow-[0_0_0_2px_rgba(73,69,255,.25)] dark:bg-grey-925' : 'border-grey-100 bg-grey-100 dark:border-transparent dark:bg-grey-900 dark:hover:bg-grey-925'} px-[10px] py-2 pr-5 font-sans text-sm font-normal leading-[1.5] text-grey-900 placeholder:text-grey-500 focus-visible:outline-none dark:text-white dark:selection:bg-grey-800 dark:placeholder:text-grey-700`}
                 type="button"
                 onClick={() => inputRef.current.focus()}
             >

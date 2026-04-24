@@ -49,7 +49,8 @@ test.describe('Image card', async () => {
                     title: 'This is a title',
                     altText: 'This is some alt text',
                     caption: 'This is a <b>caption</b>',
-                    cardWidth: 'wide'
+                    cardWidth: 'wide',
+                    maxWidthPx: 600
                 }],
                 direction: null,
                 format: '',
@@ -64,7 +65,7 @@ test.describe('Image card', async () => {
         await assertHTML(page, html`
             <div data-lexical-decorator="true" contenteditable="false" data-kg-card-width="wide">
                 <div data-kg-card-editing="false" data-kg-card-selected="false" data-kg-card="image">
-                    <figure data-kg-card-width="wide">
+                    <figure data-kg-max-width="600">
                         <div><img alt="" src="/content/images/2022/11/koenig-lexical.jpg" /></div>
                         <figcaption>
                             <div data-kg-allow-clickthrough="true">
@@ -126,7 +127,7 @@ test.describe('Image card', async () => {
         await assertHTML(page, html`
             <div data-lexical-decorator="true" contenteditable="false">
                 <div data-kg-card-editing="false" data-kg-card-selected="false" data-kg-card="image">
-                    <figure data-kg-card-width="regular">
+                    <figure>
                         <div data-testid="media-placeholder">
                             <div>
                                 <button name="placeholder-button" type="button">
@@ -286,7 +287,7 @@ test.describe('Image card', async () => {
         await assertHTML(page, html`
             <div data-lexical-decorator="true" contenteditable="false">
                 <div data-kg-card-editing="false" data-kg-card-selected="true" data-kg-card="image">
-                    <figure data-kg-card-width="regular">
+                    <figure>
                         <div><img alt="" src="blob:..." /></div>
                         <figcaption>
                             <input placeholder="Type alt text for image (optional)" value=""/>
@@ -341,7 +342,7 @@ test.describe('Image card', async () => {
         await assertHTML(page, html`
             <div data-lexical-decorator="true" contenteditable="false">
                 <div data-kg-card-editing="false" data-kg-card-selected="true" data-kg-card="image">
-                    <figure data-kg-card-width="regular">
+                    <figure>
                         <div><img alt="" src="blob:..." /></div>
                         <figcaption>
                             <div data-testid="image-caption-editor" data-kg-allow-clickthrough="true">
@@ -471,7 +472,7 @@ test.describe('Image card', async () => {
         expect(await page.locator('[data-kg-card-toolbar="image"] button[aria-label="Snippet"]')).not.toBeNull();
     });
 
-    test('toolbar can toggle image sizes', async function () {
+    test('toolbar max-width input sets maxWidthPx on the figure', async function () {
         const filePath = path.relative(process.cwd(), __dirname + '/../fixtures/large-image.png');
 
         await insertEmptyImageCard(page);
@@ -492,17 +493,20 @@ test.describe('Image card', async () => {
 
         expect(await page.locator('[data-kg-card-toolbar="image"]')).not.toBeNull();
 
-        await page.click('[data-kg-card-toolbar="image"] button[aria-label="Wide width"]');
-        expect (await page.locator('[data-kg-card-width="wide"]')).not.toBeNull();
+        const input = page.locator('[data-testid="image-max-width-input"]');
+        await input.fill('400');
+        await input.press('Enter');
 
-        await page.click('[data-kg-card-toolbar="image"] button[aria-label="Full width"]');
-        expect (await page.locator('[data-kg-card-width="full"]')).not.toBeNull();
+        await expect(page.locator('figure[data-kg-max-width="400"]')).toBeVisible();
 
-        await page.click('[data-kg-card-toolbar="image"] button[aria-label="Regular width"]');
-        expect (await page.locator('[data-kg-card-width="regular"]')).not.toBeNull();
+        // clearing the input removes the override
+        await input.fill('');
+        await input.press('Enter');
+
+        await expect(page.locator('figure[data-kg-max-width]')).toHaveCount(0);
     });
 
-    test('toolbar does not disappear on click', async function () {
+    test('toolbar does not disappear when entering max-width', async function () {
         const filePath = path.relative(process.cwd(), __dirname + '/../fixtures/large-image.png');
 
         await insertEmptyImageCard(page);
@@ -521,7 +525,9 @@ test.describe('Image card', async () => {
 
         await page.click('figure');
 
-        await page.click('[data-kg-card-toolbar="image"] button[aria-label="Regular width"]');
+        const input = page.locator('[data-testid="image-max-width-input"]');
+        await input.fill('500');
+        await input.press('Enter');
 
         expect(await page.locator('[data-kg-card-toolbar="image"]')).not.toBeNull();
     });
@@ -578,7 +584,7 @@ test.describe('Image card', async () => {
         await assertHTML(page, html`
             <div data-lexical-decorator="true" contenteditable="false">
                 <div data-kg-card-editing="false" data-kg-card-selected="false" data-kg-card="image">
-                    <figure data-kg-card-width="regular">
+                    <figure>
                         <div><img alt="" src="blob:..." /></div>
                     </figure>
                 </div>
@@ -736,7 +742,7 @@ test.describe('Image card', async () => {
         await assertHTML(page, html`
             <div data-lexical-decorator="true" contenteditable="false">
                 <div data-kg-card-editing="false" data-kg-card-selected="true" data-kg-card="image">
-                    <figure data-kg-card-width="regular">
+                    <figure>
                         <div>
                             <img
                                 alt="a group of people walking down a street next to tall buildings"
@@ -788,7 +794,7 @@ test.describe('Image card', async () => {
         await assertHTML(page, html`
             <div data-lexical-decorator="true" contenteditable="false">
                 <div data-kg-card-editing="false" data-kg-card-selected="true" data-kg-card="image">
-                    <figure data-kg-card-width="regular">
+                    <figure>
                         <div>
                             <img
                                 alt=""
@@ -834,7 +840,7 @@ test.describe('Image card', async () => {
         await assertHTML(page, html`
             <div data-lexical-decorator="true" contenteditable="false">
                 <div data-kg-card-editing="false" data-kg-card-selected="true" data-kg-card="image">
-                    <figure data-kg-card-width="regular">
+                    <figure>
                         <div>
                             <img
                                 alt=""

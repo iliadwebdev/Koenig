@@ -140,7 +140,7 @@ export function ImageCard({
     setAltText,
     setFigureRef,
     fileInputRef,
-    cardWidth,
+    maxWidthPx,
     previewSrc,
     imageUploader,
     imageCardDragHandler,
@@ -161,9 +161,15 @@ export function ImageCard({
             fileInputRef.current = ref.current;
         }
     };
+
+    const figureStyle = maxWidthPx
+        ? {maxWidth: `${maxWidthPx}px`, margin: '0 auto', display: 'block'}
+        : undefined;
+    const figureDataProps = maxWidthPx ? {'data-kg-max-width': String(maxWidthPx)} : {};
+
     return (
         <>
-            <figure ref={figureRef} data-kg-card-width={cardWidth}>
+            <figure ref={figureRef} style={figureStyle} {...figureDataProps}>
                 <ImageHolder
                     altText={altText}
                     imageCardDragHandler={imageCardDragHandler}
@@ -234,7 +240,7 @@ ImageCard.propTypes = {
     setAltText: PropTypes.func,
     setFigureRef: PropTypes.func,
     fileInputRef: PropTypes.object,
-    cardWidth: PropTypes.string,
+    maxWidthPx: PropTypes.number,
     previewSrc: PropTypes.string,
     imageUploader: PropTypes.object,
     imageFileDragHandler: PropTypes.object,

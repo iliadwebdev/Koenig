@@ -12,12 +12,34 @@ import {populateNestedEditor, setupNestedEditor} from '../utils/nested-editors';
 
 export const INSERT_IMAGE_COMMAND = createCommand();
 
+export const MAX_WIDTH_PX_MIN = 50;
+export const MAX_WIDTH_PX_MAX = 1600;
+
+function normalizeMaxWidthPx(value) {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+    const parsed = typeof value === 'number' ? value : parseInt(value, 10);
+    if (!Number.isFinite(parsed)) {
+        return null;
+    }
+    const rounded = Math.round(parsed);
+    if (rounded < MAX_WIDTH_PX_MIN) {
+        return MAX_WIDTH_PX_MIN;
+    }
+    if (rounded > MAX_WIDTH_PX_MAX) {
+        return MAX_WIDTH_PX_MAX;
+    }
+    return rounded;
+}
+
 export class ImageNode extends BaseImageNode {
     // transient properties used to control node behaviour
     __triggerFileDialog = false;
     __previewSrc = null;
     __captionEditor;
     __captionEditorInitialState;
+    __maxWidthPx = null;
 
     static kgMenu = [{
         label: 'Image',
@@ -67,7 +89,9 @@ export class ImageNode extends BaseImageNode {
     constructor(dataset = {}, key) {
         super(dataset, key);
 
-        const {previewSrc, triggerFileDialog, initialFile, selector, isImageHidden} = dataset;
+        const {previewSrc, triggerFileDialog, initialFile, selector, isImageHidden, maxWidthPx} = dataset;
+
+        this.__maxWidthPx = normalizeMaxWidthPx(maxWidthPx);
 
         this.__previewSrc = previewSrc || '';
         // don't trigger the file dialog when rendering if we've already been given a url
@@ -101,8 +125,19 @@ export class ImageNode extends BaseImageNode {
         const self = this.getLatest();
         dataset.captionEditor = self.__captionEditor;
         dataset.captionEditorInitialState = self.__captionEditorInitialState;
+        dataset.maxWidthPx = self.__maxWidthPx;
 
         return dataset;
+    }
+
+    get maxWidthPx() {
+        const self = this.getLatest();
+        return self.__maxWidthPx;
+    }
+
+    set maxWidthPx(value) {
+        const writable = this.getWritable();
+        writable.__maxWidthPx = normalizeMaxWidthPx(value);
     }
 
     get previewSrc() {
@@ -137,7 +172,59 @@ export class ImageNode extends BaseImageNode {
             });
         }
 
+        json.maxWidthPx = this.__maxWidthPx;
+
         return json;
+    }
+
+    static importJSON(serializedNode) {
+        const node = super.importJSON(serializedNode);
+        node.__maxWidthPx = normalizeMaxWidthPx(serializedNode?.maxWidthPx);
+        return node;
+    }
+
+    exportDOM(options = {}) {
+        const result = super.exportDOM(options);
+        const element = result?.element;
+        const maxWidthPx = this.__maxWidthPx;
+
+        if (element && maxWidthPx && element.tagName === 'FIGURE') {
+            element.setAttribute('data-kg-max-width', String(maxWidthPx));
+            element.style.maxWidth = `${maxWidthPx}px`;
+            element.style.margin = '0 auto';
+            element.style.display = 'block';
+        }
+
+        return result;
+    }
+
+    static importDOM() {
+        const baseMap = super.importDOM();
+        const originalFigureFactory = baseMap.figure;
+
+        baseMap.figure = (nodeElem) => {
+            const baseEntry = originalFigureFactory(nodeElem);
+            if (!baseEntry) {
+                return null;
+            }
+            const originalConversion = baseEntry.conversion;
+            return {
+                ...baseEntry,
+                conversion(domNode) {
+                    const result = originalConversion(domNode);
+                    if (result?.node && typeof domNode.getAttribute === 'function') {
+                        const raw = domNode.getAttribute('data-kg-max-width');
+                        const normalized = normalizeMaxWidthPx(raw);
+                        if (normalized !== null) {
+                            result.node.__maxWidthPx = normalized;
+                        }
+                    }
+                    return result;
+                }
+            };
+        };
+
+        return baseMap;
     }
 
     decorate() {
@@ -155,6 +242,7 @@ export class ImageNode extends BaseImageNode {
                             captionEditorInitialState={this.__captionEditorInitialState}
                             href={this.href}
                             initialFile={this.__initialFile}
+                            maxWidthPx={this.__maxWidthPx}
                             nodeKey={this.getKey()}
                             previewSrc={this.previewSrc}
                             src={this.src}
