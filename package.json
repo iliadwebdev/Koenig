@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "yarn workspace @tryghost/koenig-lexical dev",
+    "dev": "yarn workspace @iliad.dev/koenig-lexical dev",
     "prepare": "husky .github/hooks",
     "presetup": "yarn",
     "setup": "yarn && lerna run build",

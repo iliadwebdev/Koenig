@@ -88,7 +88,11 @@ export default (function viteConfig({mode}) {
             cssCodeSplit: true,
             lib: {
                 entry: resolve(__dirname, 'src/index.js'),
-                name: pkg.name,
+                // Force flat UMD global to match upstream @tryghost/koenig-lexical.
+                // A `.` in the package scope (@iliad.dev/…) would otherwise make
+                // Rolldown emit window['@iliad']['dev/koenig-lexical'], breaking
+                // consumers that read window['@tryghost/koenig-lexical'].
+                name: '@tryghost/koenig-lexical',
                 fileName(format) {
                     if (format === 'umd') {
                         return `${outputFileName}.umd.js`;
