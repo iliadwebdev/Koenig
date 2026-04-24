@@ -17,7 +17,6 @@ on:
 jobs:
     ci:
         name: Build & unit tests
-        if: github.event_name != 'push' || startsWith(github.ref, 'refs/heads/iliad/')
         runs-on: ubuntu-latest
         env:
             FORCE_COLOR: 1
