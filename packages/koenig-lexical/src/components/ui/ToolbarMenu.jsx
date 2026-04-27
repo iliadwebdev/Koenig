@@ -1,4 +1,7 @@
 import AddIcon from '../../assets/icons/kg-add.svg?react';
+import AlignCenterIcon from '../../assets/icons/kg-align-center.svg?react';
+import AlignLeftIcon from '../../assets/icons/kg-align-left.svg?react';
+import AlignRightIcon from '../../assets/icons/kg-align-right.svg?react';
 import BoldIcon from '../../assets/icons/kg-bold.svg?react';
 import EditIcon from '../../assets/icons/kg-edit.svg?react';
 import EyeIcon from '../../assets/icons/kg-eye.svg?react';
@@ -24,6 +27,9 @@ export const TOOLBAR_ICONS = {
     italic: ItalicIcon,
     headingTwo: HeadingTwoIcon,
     headingThree: HeadingThreeIcon,
+    alignLeft: AlignLeftIcon,
+    alignCenter: AlignCenterIcon,
+    alignRight: AlignRightIcon,
     quote: QuoteIcon,
     quoteOne: QuoteOneIcon,
     quoteTwo: QuoteTwoIcon,

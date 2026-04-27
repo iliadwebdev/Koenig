@@ -2,6 +2,30 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Whitelabel change log — REQUIRED
+
+This repo is a fork of `TryGhost/Koenig` published as
+`@iliad.dev/koenig-lexical`. Every divergence from upstream is tracked in
+[whitelabel-changes.md](whitelabel-changes.md) so future merges from
+upstream stay manageable.
+
+**Whenever you (Claude) modify a file in this repo, you MUST also update
+[whitelabel-changes.md](whitelabel-changes.md) in the same change:**
+
+- Add an entry under the appropriate section in the **Inventory of changes**
+  describing what changed, where, and *why* (the why is what makes the file
+  useful when resolving merge conflicts).
+- Use the existing markdown link format
+  (`[path/to/file](path/to/file)`) so entries stay clickable.
+- If a change is later reverted, remove the corresponding entry rather
+  than leaving stale documentation.
+- New top-level concerns (e.g. a new whitelabel feature area) get a new
+  numbered section under **Inventory of changes**.
+
+If a request would touch the repo without producing a meaningful entry
+(e.g. a no-op formatting tweak), say so and skip the doc update — but the
+default is: change the code, update the doc.
+
 ## Project Overview
 
 Koenig is Ghost's editor based on the Lexical framework. This is a Lerna-managed monorepo containing multiple packages for Ghost's content editing ecosystem.

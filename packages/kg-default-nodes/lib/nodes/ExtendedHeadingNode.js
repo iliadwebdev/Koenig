@@ -1,4 +1,5 @@
 import {HeadingNode} from '@lexical/rich-text';
+import {formatFromClassList} from '../utils/alignment';
 
 // Since the HeadingNode is foundational to Lexical rich-text, only using a
 // custom HeadingNode is undesirable as it means every package would need to
@@ -25,8 +26,15 @@ export class ExtendedHeadingNode extends HeadingNode {
 
     static importDOM() {
         const importers = HeadingNode.importDOM();
+        const patched = {};
+        for (const tag of ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']) {
+            if (importers?.[tag]) {
+                patched[tag] = patchHeadingAlignment(importers[tag]);
+            }
+        }
         return {
             ...importers,
+            ...patched,
             p: patchParagraphConversion(importers?.p)
         };
     }
@@ -40,6 +48,37 @@ export class ExtendedHeadingNode extends HeadingNode {
         json.type = 'extended-heading';
         return json;
     }
+}
+
+function patchHeadingAlignment(originalConverter) {
+    return (domNode) => {
+        const original = originalConverter?.(domNode);
+        if (!original) {
+            return null;
+        }
+
+        const originalConversionFn = original.conversion;
+
+        return {
+            ...original,
+            // Bump priority above the stock HeadingNode converter (priority 0)
+            // so this wrapped version wins when both are registered.
+            priority: Math.max(original.priority ?? 0, 1),
+            conversion: (innerDomNode) => {
+                const result = originalConversionFn(innerDomNode);
+                if (!result?.node) {
+                    return result;
+                }
+
+                const format = formatFromClassList(innerDomNode.classList);
+                if (format && typeof result.node.setFormat === 'function') {
+                    result.node.setFormat(format);
+                }
+
+                return result;
+            }
+        };
+    };
 }
 
 function patchParagraphConversion(originalDOMConverter) {

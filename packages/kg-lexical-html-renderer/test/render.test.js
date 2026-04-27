@@ -27,6 +27,21 @@ describe('render()', function () {
         input: `{"root":{"children":[{"children":[{"type":"linebreak","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
         output: ''
     }));
+
+    it('emits kg-align-center class for centered paragraphs', shouldRender({
+        input: `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Centered","type":"text","version":1}],"direction":"ltr","format":"center","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+        output: '<p class="kg-align-center">Centered</p>'
+    }));
+
+    it('emits kg-align-right class for right-aligned paragraphs', shouldRender({
+        input: `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Right","type":"text","version":1}],"direction":"ltr","format":"right","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+        output: '<p class="kg-align-right">Right</p>'
+    }));
+
+    it('emits no class for paragraphs without alignment', shouldRender({
+        input: `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Plain","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+        output: '<p>Plain</p>'
+    }));
 });
 
 describe('Special elements', function () {

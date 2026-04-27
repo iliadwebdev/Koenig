@@ -17,6 +17,16 @@ describe('Headings', function () {
         output: `<h1 id="heading-one">heading one</h1><h1 id="heading-one-1">heading one</h1><h1 id="heading-two">heading two</h1><h1 id="heading-one-2">heading one</h1><h1 id="heading-two-1">heading two</h1>`
     }));
 
+    it('emits kg-align-* class for centered headings', shouldRender({
+        input: `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Centered","type":"text","version":1}],"direction":"ltr","format":"center","indent":0,"type":"heading","version":1,"tag":"h2"}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+        output: `<h2 id="centered" class="kg-align-center">Centered</h2>`
+    }));
+
+    it('emits kg-align-right class for right-aligned headings', shouldRender({
+        input: `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Right","type":"text","version":1}],"direction":"ltr","format":"right","indent":0,"type":"heading","version":1,"tag":"h3"}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+        output: `<h3 id="right" class="kg-align-right">Right</h3>`
+    }));
+
     it('extended heading nodes', shouldRender({
         options: {nodes: [ExtendedHeadingNode]},
         input: `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Heading 1","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"extended-heading","version":1,"tag":"h1"},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Heading 2","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"extended-heading","version":1,"tag":"h2"},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Heading 3","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"extended-heading","version":1,"tag":"h3"},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Heading 4","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"extended-heading","version":1,"tag":"h4"},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Heading 5","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"extended-heading","version":1,"tag":"h5"},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Heading 6","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"extended-heading","version":1,"tag":"h6"}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,

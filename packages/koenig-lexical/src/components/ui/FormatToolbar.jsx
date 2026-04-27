@@ -10,6 +10,7 @@ import {
     $createParagraphNode,
     $getSelection,
     $isRangeSelection,
+    FORMAT_ELEMENT_COMMAND,
     FORMAT_TEXT_COMMAND
 } from 'lexical';
 import {$getNearestNodeOfType} from '@lexical/utils';
@@ -62,6 +63,7 @@ export default function FormatToolbar({
     const [isBold, setIsBold] = React.useState(false);
     const [isItalic, setIsItalic] = React.useState(false);
     const [blockType, setBlockType] = React.useState('paragraph');
+    const [alignment, setAlignment] = React.useState('left');
     const {cardConfig: {createSnippet}} = React.useContext(KoenigComposerContext);
 
     let hideHeading = false;
@@ -122,6 +124,11 @@ export default function FormatToolbar({
                         setBlockType(type);
                     }
                 }
+
+                const format = typeof element.getFormatType === 'function'
+                    ? element.getFormatType()
+                    : '';
+                setAlignment(format || 'left');
             }
         });
     }, [editor]);
@@ -157,6 +164,8 @@ export default function FormatToolbar({
             });
         }
     };
+
+    const showAlignment = blockType === 'paragraph' || /^h[1-6]$/.test(blockType);
 
     const formatQuote = () => {
         editor.update(() => {
@@ -210,6 +219,31 @@ export default function FormatToolbar({
                 label="Heading 3"
                 shortcutKeys={[ctrlOrSymbol(), altOrOption(), '3']}
                 onClick={() => (blockType === 'h3' ? formatParagraph() : formatHeading('h3'))}
+            />
+            <ToolbarMenuSeparator hide={!showAlignment} />
+            <ToolbarMenuItem
+                data-kg-toolbar-button="align-left"
+                hide={!showAlignment}
+                icon="alignLeft"
+                isActive={alignment === 'left'}
+                label="Align left"
+                onClick={() => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, '')}
+            />
+            <ToolbarMenuItem
+                data-kg-toolbar-button="align-center"
+                hide={!showAlignment}
+                icon="alignCenter"
+                isActive={alignment === 'center'}
+                label="Align center"
+                onClick={() => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center')}
+            />
+            <ToolbarMenuItem
+                data-kg-toolbar-button="align-right"
+                hide={!showAlignment}
+                icon="alignRight"
+                isActive={alignment === 'right'}
+                label="Align right"
+                onClick={() => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right')}
             />
             <ToolbarMenuSeparator hide={hideQuotes} />
             <ToolbarMenuItem

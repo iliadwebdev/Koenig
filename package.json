@@ -12,6 +12,7 @@
     "presetup": "yarn",
     "setup": "yarn && lerna run build",
     "test": "lerna run test",
+    "atlas:push": "yarn lerna run build --scope @iliad.dev/koenig-lexical --include-dependencies && cd packages/koenig-lexical && npm publish && cd ../../",
     "lint": "lerna run lint",
     "preship": "lerna run preversion && yarn test",
     "fix": "yarn cache clean && rm -rf node_modules && yarn",

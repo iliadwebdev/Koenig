@@ -254,9 +254,29 @@ test.describe('Paste behaviour', async () => {
     });
 
     test.describe('Styles', function () {
-        test('text alignment styles are stripped from paragraphs on paste', async function () {
+        test('text alignment is preserved on paragraphs from inline-style paste', async function () {
             await focusEditor(page);
             await pasteHtml(page, '<p style="text-align: center">Testing</p>');
+
+            await assertHTML(page, html`
+                <p dir="ltr" style="text-align: center;">
+                    <span data-lexical-text="true">Testing</span>
+                </p>
+            `, {ignoreClasses: false, ignoreInlineStyles: false});
+        });
+
+        test('text alignment is preserved on headings from inline-style paste', async function () {
+            await focusEditor(page);
+            await pasteHtml(page, '<h1 style="text-align: center">Testing</h1>');
+
+            await assertHTML(page, html`
+                <h1 dir="ltr" style="text-align: center;"><span data-lexical-text="true">Testing</span></h1>
+            `, {ignoreClasses: false, ignoreInlineStyles: false});
+        });
+
+        test('default text alignment (left) is normalized away on paste', async function () {
+            await focusEditor(page);
+            await pasteHtml(page, '<p style="text-align: left">Testing</p>');
 
             await assertHTML(page, html`
                 <p dir="ltr">
@@ -265,12 +285,14 @@ test.describe('Paste behaviour', async () => {
             `, {ignoreClasses: false, ignoreInlineStyles: false});
         });
 
-        test('text alignment styles are stripped from headings on paste', async function () {
+        test('text alignment is preserved from kg-align-* class on paste', async function () {
             await focusEditor(page);
-            await pasteHtml(page, '<h1 style="text-align: center">Testing</h1>');
+            await pasteHtml(page, '<p class="kg-align-right">Testing</p>');
 
             await assertHTML(page, html`
-                <h1 dir="ltr"><span data-lexical-text="true">Testing</span></h1>
+                <p dir="ltr" style="text-align: right;">
+                    <span data-lexical-text="true">Testing</span>
+                </p>
             `, {ignoreClasses: false, ignoreInlineStyles: false});
         });
 

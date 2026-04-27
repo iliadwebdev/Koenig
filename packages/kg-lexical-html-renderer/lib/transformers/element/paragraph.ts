@@ -1,4 +1,5 @@
 import {$isParagraphNode} from 'lexical';
+import alignmentClass from '../../utils/alignment-class';
 import type {ElementNode} from 'lexical';
 import type {ExportChildren} from '..';
 import type {RendererOptions} from '@tryghost/kg-default-nodes';
@@ -9,6 +10,9 @@ module.exports = {
             return null;
         }
 
-        return `<p>${exportChildren(node)}</p>`;
+        const className = alignmentClass(node.getFormatType());
+        const classAttr = className ? ` class="${className}"` : '';
+
+        return `<p${classAttr}>${exportChildren(node)}</p>`;
     }
 };

@@ -170,6 +170,53 @@ test.describe('Floating format toolbar', async () => {
             expect(await page.$eval(buttonSelector, e => e.dataset.kgActive)).toEqual('false');
         });
 
+        test('aligns paragraph center then back to default', async function () {
+            await focusEditor(page);
+            await page.keyboard.type('text for selection');
+
+            await selectBackwards(page, 'selection'.length);
+
+            const centerSelector = `[data-kg-floating-toolbar] [data-kg-toolbar-button="align-center"] button`;
+            const leftSelector = `[data-kg-floating-toolbar] [data-kg-toolbar-button="align-left"] button`;
+
+            // Left should be active by default
+            expect(await page.$eval(leftSelector, e => e.dataset.kgActive)).toEqual('true');
+            expect(await page.$eval(centerSelector, e => e.dataset.kgActive)).toEqual('false');
+
+            await page.click(centerSelector);
+
+            await assertHTML(page, html`
+                <p dir="ltr" style="text-align: center;">
+                    <span data-lexical-text="true">text for selection</span>
+                </p>
+            `);
+            expect(await page.$eval(centerSelector, e => e.dataset.kgActive)).toEqual('true');
+
+            await page.click(leftSelector);
+
+            await assertHTML(page, html`
+                <p dir="ltr" style="text-align: left;">
+                    <span data-lexical-text="true">text for selection</span>
+                </p>
+            `);
+            expect(await page.$eval(leftSelector, e => e.dataset.kgActive)).toEqual('true');
+            expect(await page.$eval(centerSelector, e => e.dataset.kgActive)).toEqual('false');
+        });
+
+        test('hides alignment buttons inside a quote', async function () {
+            await focusEditor(page);
+            await page.keyboard.type('quote text');
+            await selectBackwards(page, 'quote text'.length);
+
+            await page.click(`[data-kg-floating-toolbar] [data-kg-toolbar-button="quote"] button`);
+
+            // re-select to bring up the toolbar
+            await selectBackwards(page, 'quote text'.length);
+
+            await expect(page.locator(`[data-kg-floating-toolbar] [data-kg-toolbar-button="align-center"]`)).toHaveCount(0);
+            await expect(page.locator(`[data-kg-floating-toolbar] [data-kg-toolbar-button="align-left"]`)).toHaveCount(0);
+        });
+
         test('cycles through quote styles', async function () {
             await focusEditor(page);
             await page.keyboard.type('quote text');

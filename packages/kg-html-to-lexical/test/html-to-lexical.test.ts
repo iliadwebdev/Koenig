@@ -469,6 +469,35 @@ describe('HTMLtoLexical', function () {
         });
     });
 
+    describe('Text alignment', function () {
+        it('reads kg-align-center class on paragraphs', function () {
+            const lexical = htmlToLexical('<p class="kg-align-center">Centered</p>', options);
+
+            assert.equal(lexical.root.children.length, 1);
+            assert.equal(lexical.root.children[0].type, 'paragraph');
+            assert.equal(lexical.root.children[0].format, 'center');
+        });
+
+        it('reads kg-align-right class on paragraphs', function () {
+            const lexical = htmlToLexical('<p class="kg-align-right">Right</p>', options);
+
+            assert.equal(lexical.root.children[0].format, 'right');
+        });
+
+        it('reads kg-align-* class on headings', function () {
+            const lexical = htmlToLexical('<h2 class="kg-align-center">Centered</h2>', options);
+
+            assert.equal(lexical.root.children[0].type, 'extended-heading');
+            assert.equal(lexical.root.children[0].format, 'center');
+        });
+
+        it('still reads inline style="text-align" on paragraphs', function () {
+            const lexical = htmlToLexical('<p style="text-align: right">Right</p>', options);
+
+            assert.equal(lexical.root.children[0].format, 'right');
+        });
+    });
+
     describe('Custom nodes', function () {
         it('can convert <hr> into a card', function () {
             // $insertNodes() doesn't work with just decorators, uses $appendNodes() instead

@@ -235,7 +235,7 @@ describe('Default transforms', function () {
                         tag: 'ul'
                     },
 
-                    // heading with alignment format reset
+                    // heading keeps its alignment (no longer stripped)
                     {
                         children: [
                             {
@@ -249,7 +249,7 @@ describe('Default transforms', function () {
                             }
                         ],
                         direction: 'ltr',
-                        format: '',
+                        format: 'center',
                         indent: 0,
                         type: 'extended-heading',
                         version: 1,
@@ -265,5 +265,41 @@ describe('Default transforms', function () {
         };
 
         assertTransform(editor, registerDefaultTransforms, before, after);
+    });
+
+    it('preserves paragraph alignment formats', function () {
+        const editor = createEditor();
+
+        const aligned = {
+            root: {
+                children: [
+                    {
+                        children: [
+                            {
+                                detail: 0,
+                                format: 0,
+                                mode: 'normal',
+                                style: '',
+                                text: 'Centered',
+                                type: 'extended-text',
+                                version: 1
+                            }
+                        ],
+                        direction: 'ltr',
+                        format: 'center',
+                        indent: 0,
+                        type: 'paragraph',
+                        version: 1
+                    }
+                ],
+                direction: 'ltr',
+                format: '',
+                indent: 0,
+                type: 'root',
+                version: 1
+            }
+        };
+
+        assertTransform(editor, registerDefaultTransforms, aligned, aligned);
     });
 });
