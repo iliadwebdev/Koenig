@@ -9,7 +9,7 @@ import {ProgressBar} from '../ProgressBar';
 import {isGif} from '../../../utils/isGif';
 import {openFileSelection} from '../../../utils/openFileSelection';
 
-function PopulatedImageCard({src, alt, previewSrc, imageUploader, imageCardDragHandler, imageFileDragHandler, isPinturaEnabled, openImageEditor, onFileChange, maxWidthPx}) {
+function PopulatedImageCard({src, alt, previewSrc, imageUploader, imageCardDragHandler, imageFileDragHandler, isPinturaEnabled, openImageEditor, onFileChange, maxWidthPx, imageAlignment, focalPoint}) {
     const progressStyle = {
         width: `${imageUploader.progress?.toFixed(0)}%`
     };
@@ -24,13 +24,24 @@ function PopulatedImageCard({src, alt, previewSrc, imageUploader, imageCardDragH
     // maxWidthPx is applied on the img (not the figure) so the caption below
     // stays natural-width — otherwise constraining the figure would squish
     // the caption text alongside the image.
-    const imgStyle = maxWidthPx ? {maxWidth: `${maxWidthPx}px`} : undefined;
+    // object-position is a no-op until something downstream crops with
+    // object-fit, so it's safe to always emit when set.
+    const imgStyle = (maxWidthPx || focalPoint) ? {
+        ...(maxWidthPx ? {maxWidth: `${maxWidthPx}px`} : {}),
+        ...(focalPoint ? {objectPosition: `${focalPoint.x}% ${focalPoint.y}%`} : {})
+    } : undefined;
+    // mx-auto is the default; for explicit left/right we override the auto margins
+    const imgClassName = `block ${previewSrc ? 'opacity-40 ' : ''}${
+        maxWidthPx && imageAlignment === 'left' ? 'mr-auto'
+            : maxWidthPx && imageAlignment === 'right' ? 'ml-auto'
+                : 'mx-auto'
+    }`;
 
     return (
         <div ref={setRef} className="not-kg-prose group/image relative">
             <img
                 alt={alt ? alt : progressAlt}
-                className={`mx-auto block ${previewSrc ? 'opacity-40' : ''}`}
+                className={imgClassName}
                 data-testid={imageUploader.isLoading ? 'image-card-loading' : 'image-card-populated'}
                 src={previewSrc ? previewSrc : src}
                 style={imgStyle}
@@ -109,12 +120,16 @@ const ImageHolder = ({
     imageFileDragHandler,
     isPinturaEnabled,
     openImageEditor,
-    maxWidthPx
+    maxWidthPx,
+    imageAlignment,
+    focalPoint
 }) => {
     if (previewSrc || src) {
         return (
             <PopulatedImageCard
                 alt={altText}
+                focalPoint={focalPoint}
+                imageAlignment={imageAlignment}
                 imageCardDragHandler={imageCardDragHandler}
                 imageFileDragHandler={imageFileDragHandler}
                 imageUploader={imageUploader}
@@ -150,6 +165,8 @@ export function ImageCard({
     fileInputRef,
     cardWidth,
     maxWidthPx,
+    imageAlignment,
+    focalPoint,
     previewSrc,
     imageUploader,
     imageCardDragHandler,
@@ -174,13 +191,20 @@ export function ImageCard({
     // max-width-in-pixels is applied inside on the <img>, not here on the
     // figure — otherwise caption text gets squished alongside the image.
     // We still tag the figure for CSS hooks and attribute-based styling.
-    const figureDataProps = maxWidthPx ? {'data-kg-max-width': String(maxWidthPx)} : {};
+    const figureDataProps = {
+        ...(maxWidthPx ? {'data-kg-max-width': String(maxWidthPx)} : {}),
+        ...(imageAlignment ? {'data-kg-image-align': imageAlignment} : {}),
+        ...(focalPoint ? {'data-kg-focal-point': `${focalPoint.x},${focalPoint.y}`} : {})
+    };
+    const figureClassName = imageAlignment ? `kg-image-align-${imageAlignment}` : undefined;
 
     return (
         <>
-            <figure ref={figureRef} data-kg-card-width={cardWidth} {...figureDataProps}>
+            <figure ref={figureRef} className={figureClassName} data-kg-card-width={cardWidth} {...figureDataProps}>
                 <ImageHolder
                     altText={altText}
+                    focalPoint={focalPoint}
+                    imageAlignment={imageAlignment}
                     imageCardDragHandler={imageCardDragHandler}
                     imageFileDragHandler={imageFileDragHandler}
                     imageUploader={imageUploader}
@@ -219,7 +243,9 @@ ImageHolder.propTypes = {
     imageCardDragHandler: PropTypes.object,
     isPinturaEnabled: PropTypes.bool,
     openImageEditor: PropTypes.func,
-    maxWidthPx: PropTypes.number
+    maxWidthPx: PropTypes.number,
+    imageAlignment: PropTypes.oneOf(['left', 'right', null]),
+    focalPoint: PropTypes.shape({x: PropTypes.number, y: PropTypes.number})
 };
 
 PopulatedImageCard.propTypes = {
@@ -232,7 +258,9 @@ PopulatedImageCard.propTypes = {
     isPinturaEnabled: PropTypes.bool,
     openImageEditor: PropTypes.func,
     onFileChange: PropTypes.func,
-    maxWidthPx: PropTypes.number
+    maxWidthPx: PropTypes.number,
+    imageAlignment: PropTypes.oneOf(['left', 'right', null]),
+    focalPoint: PropTypes.shape({x: PropTypes.number, y: PropTypes.number})
 };
 
 EmptyImageCard.propTypes = {
@@ -254,6 +282,8 @@ ImageCard.propTypes = {
     fileInputRef: PropTypes.object,
     cardWidth: PropTypes.string,
     maxWidthPx: PropTypes.number,
+    imageAlignment: PropTypes.oneOf(['left', 'right', null]),
+    focalPoint: PropTypes.shape({x: PropTypes.number, y: PropTypes.number}),
     previewSrc: PropTypes.string,
     imageUploader: PropTypes.object,
     imageFileDragHandler: PropTypes.object,

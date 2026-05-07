@@ -7,6 +7,7 @@ import usePinturaEditor from '../hooks/usePinturaEditor';
 import {$createGalleryNode} from './GalleryNode';
 import {$createNodeSelection, $getNodeByKey, $setSelection} from 'lexical';
 import {ActionToolbar} from '../components/ui/ActionToolbar';
+import {FocalPointPicker} from '../components/ui/FocalPointPicker';
 import {ImageCard} from '../components/ui/cards/ImageCard';
 import {ImageUploadForm} from '../components/ui/ImageUploadForm';
 import {LinkInput} from '../components/ui/LinkInput';
@@ -22,7 +23,7 @@ import {isGif} from '../utils/isGif';
 import {openFileSelection} from '../utils/openFileSelection';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
-export function ImageNodeComponent({nodeKey, initialFile, src, altText, captionEditor, captionEditorInitialState, triggerFileDialog, previewSrc, href, maxWidthPx}) {
+export function ImageNodeComponent({nodeKey, initialFile, src, altText, captionEditor, captionEditorInitialState, triggerFileDialog, previewSrc, href, maxWidthPx, imageAlignment, focalPoint}) {
     const [editor] = useLexicalComposerContext();
     const [showLink, setShowLink] = React.useState(false);
     const {fileUploader, cardConfig} = React.useContext(KoenigComposerContext);
@@ -30,6 +31,7 @@ export function ImageNodeComponent({nodeKey, initialFile, src, altText, captionE
     const fileInputRef = React.useRef();
     const toolbarFileInputRef = React.useRef();
     const [showSnippetToolbar, setShowSnippetToolbar] = React.useState(false);
+    const [showFocalPoint, setShowFocalPoint] = React.useState(false);
 
     const imageUploader = fileUploader.useFileUpload('image');
     const imageFileDragHandler = useFileDragAndDrop({handleDrop: handleImageDrop});
@@ -195,6 +197,20 @@ export function ImageNodeComponent({nodeKey, initialFile, src, altText, captionE
         });
     }, [editor, nodeKey]);
 
+    const handleImageAlignmentChange = React.useCallback((value) => {
+        editor.update(() => {
+            const node = $getNodeByKey(nodeKey);
+            node.imageAlignment = value;
+        });
+    }, [editor, nodeKey]);
+
+    const handleFocalPointChange = React.useCallback((value) => {
+        editor.update(() => {
+            const node = $getNodeByKey(nodeKey);
+            node.focalPoint = value;
+        });
+    }, [editor, nodeKey]);
+
     const handleImageCardResize = React.useCallback((newWidth) => {
         if (!allowedImageCardWidths.includes(newWidth)) {
             return;
@@ -238,6 +254,8 @@ export function ImageNodeComponent({nodeKey, initialFile, src, altText, captionE
                 captionEditorInitialState={captionEditorInitialState}
                 cardWidth={cardWidth}
                 fileInputRef={fileInputRef}
+                focalPoint={focalPoint}
+                imageAlignment={imageAlignment}
                 imageCardDragHandler={imageCardDragHandler}
                 imageFileDragHandler={imageFileDragHandler}
                 imageUploader={imageUploader}
@@ -274,7 +292,23 @@ export function ImageNodeComponent({nodeKey, initialFile, src, altText, captionE
 
             <ActionToolbar
                 data-kg-card-toolbar="image"
-                isVisible={src && isSelected && !showLink && !showSnippetToolbar}
+                isVisible={showFocalPoint && !!src}
+            >
+                <FocalPointPicker
+                    alt={altText}
+                    src={src}
+                    value={focalPoint}
+                    onChange={handleFocalPointChange}
+                    onClose={() => {
+                        setShowFocalPoint(false);
+                        reselectImageCard();
+                    }}
+                />
+            </ActionToolbar>
+
+            <ActionToolbar
+                data-kg-card-toolbar="image"
+                isVisible={src && isSelected && !showLink && !showSnippetToolbar && !showFocalPoint}
             >
                 <ImageUploadForm
                     fileInputRef={toolbarFileInputRef}
@@ -314,6 +348,40 @@ export function ImageNodeComponent({nodeKey, initialFile, src, altText, captionE
                         suffix="px"
                         value={maxWidthPx ?? ''}
                         onChange={handleMaxWidthPxChange}
+                    />
+                    <ToolbarMenuSeparator hide={isGif(src) || !maxWidthPx} />
+                    <ToolbarMenuItem
+                        dataTestId="image-align-left"
+                        hide={isGif(src) || !maxWidthPx}
+                        icon="alignLeft"
+                        isActive={imageAlignment === 'left'}
+                        label="Align image left"
+                        onClick={() => handleImageAlignmentChange('left')}
+                    />
+                    <ToolbarMenuItem
+                        dataTestId="image-align-center"
+                        hide={isGif(src) || !maxWidthPx}
+                        icon="alignCenter"
+                        isActive={!imageAlignment}
+                        label="Align image center"
+                        onClick={() => handleImageAlignmentChange(null)}
+                    />
+                    <ToolbarMenuItem
+                        dataTestId="image-align-right"
+                        hide={isGif(src) || !maxWidthPx}
+                        icon="alignRight"
+                        isActive={imageAlignment === 'right'}
+                        label="Align image right"
+                        onClick={() => handleImageAlignmentChange('right')}
+                    />
+                    <ToolbarMenuSeparator hide={isGif(src)} />
+                    <ToolbarMenuItem
+                        dataTestId="image-focal-point"
+                        hide={isGif(src)}
+                        icon="focalPoint"
+                        isActive={!!focalPoint}
+                        label="Set focal point"
+                        onClick={() => setShowFocalPoint(true)}
                     />
                     <ToolbarMenuSeparator hide={isGif(src)} />
                     <ToolbarMenuItem icon="link" isActive={href || false} label="Link" onClick = {() => {

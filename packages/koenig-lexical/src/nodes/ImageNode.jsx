@@ -33,6 +33,55 @@ function normalizeMaxWidthPx(value) {
     return rounded;
 }
 
+// 'center' is the default and intentionally collapses to null so it isn't
+// persisted or emitted — only explicit left/right overrides round-trip.
+function normalizeImageAlignment(value) {
+    if (value === 'left' || value === 'right') {
+        return value;
+    }
+    return null;
+}
+
+// Focal point: {x, y} in 0–100 percentages. Default-center (50,50) collapses
+// to null so the implicit default never round-trips, matching imageAlignment.
+// Accepts {x,y} objects, [x,y] arrays, and "x,y" strings (the last for
+// data-attribute round-tripping). Anything malformed → null.
+function normalizeFocalPoint(value) {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+    let rawX;
+    let rawY;
+    if (typeof value === 'string') {
+        const parts = value.split(',');
+        if (parts.length !== 2) {
+            return null;
+        }
+        [rawX, rawY] = parts;
+    } else if (Array.isArray(value)) {
+        if (value.length !== 2) {
+            return null;
+        }
+        [rawX, rawY] = value;
+    } else if (typeof value === 'object') {
+        rawX = value.x;
+        rawY = value.y;
+    } else {
+        return null;
+    }
+    const x = parseFloat(rawX);
+    const y = parseFloat(rawY);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        return null;
+    }
+    const clampedX = Math.round(Math.max(0, Math.min(100, x)) * 10) / 10;
+    const clampedY = Math.round(Math.max(0, Math.min(100, y)) * 10) / 10;
+    if (clampedX === 50 && clampedY === 50) {
+        return null;
+    }
+    return {x: clampedX, y: clampedY};
+}
+
 export class ImageNode extends BaseImageNode {
     // transient properties used to control node behaviour
     __triggerFileDialog = false;
@@ -40,6 +89,8 @@ export class ImageNode extends BaseImageNode {
     __captionEditor;
     __captionEditorInitialState;
     __maxWidthPx = null;
+    __imageAlignment = null;
+    __focalPoint = null;
 
     static kgMenu = [{
         label: 'Image',
@@ -89,9 +140,11 @@ export class ImageNode extends BaseImageNode {
     constructor(dataset = {}, key) {
         super(dataset, key);
 
-        const {previewSrc, triggerFileDialog, initialFile, selector, isImageHidden, maxWidthPx} = dataset;
+        const {previewSrc, triggerFileDialog, initialFile, selector, isImageHidden, maxWidthPx, imageAlignment, focalPoint} = dataset;
 
         this.__maxWidthPx = normalizeMaxWidthPx(maxWidthPx);
+        this.__imageAlignment = normalizeImageAlignment(imageAlignment);
+        this.__focalPoint = normalizeFocalPoint(focalPoint);
 
         this.__previewSrc = previewSrc || '';
         // don't trigger the file dialog when rendering if we've already been given a url
@@ -126,6 +179,8 @@ export class ImageNode extends BaseImageNode {
         dataset.captionEditor = self.__captionEditor;
         dataset.captionEditorInitialState = self.__captionEditorInitialState;
         dataset.maxWidthPx = self.__maxWidthPx;
+        dataset.imageAlignment = self.__imageAlignment;
+        dataset.focalPoint = self.__focalPoint;
 
         return dataset;
     }
@@ -138,6 +193,26 @@ export class ImageNode extends BaseImageNode {
     set maxWidthPx(value) {
         const writable = this.getWritable();
         writable.__maxWidthPx = normalizeMaxWidthPx(value);
+    }
+
+    get imageAlignment() {
+        const self = this.getLatest();
+        return self.__imageAlignment;
+    }
+
+    set imageAlignment(value) {
+        const writable = this.getWritable();
+        writable.__imageAlignment = normalizeImageAlignment(value);
+    }
+
+    get focalPoint() {
+        const self = this.getLatest();
+        return self.__focalPoint;
+    }
+
+    set focalPoint(value) {
+        const writable = this.getWritable();
+        writable.__focalPoint = normalizeFocalPoint(value);
     }
 
     get previewSrc() {
@@ -173,6 +248,8 @@ export class ImageNode extends BaseImageNode {
         }
 
         json.maxWidthPx = this.__maxWidthPx;
+        json.imageAlignment = this.__imageAlignment;
+        json.focalPoint = this.__focalPoint;
 
         return json;
     }
@@ -180,6 +257,8 @@ export class ImageNode extends BaseImageNode {
     static importJSON(serializedNode) {
         const node = super.importJSON(serializedNode);
         node.__maxWidthPx = normalizeMaxWidthPx(serializedNode?.maxWidthPx);
+        node.__imageAlignment = normalizeImageAlignment(serializedNode?.imageAlignment);
+        node.__focalPoint = normalizeFocalPoint(serializedNode?.focalPoint);
         return node;
     }
 
@@ -187,6 +266,8 @@ export class ImageNode extends BaseImageNode {
         const result = super.exportDOM(options);
         const element = result?.element;
         const maxWidthPx = this.__maxWidthPx;
+        const imageAlignment = this.__imageAlignment;
+        const focalPoint = this.__focalPoint;
 
         if (element && maxWidthPx && element.tagName === 'FIGURE') {
             element.setAttribute('data-kg-max-width', String(maxWidthPx));
@@ -195,8 +276,30 @@ export class ImageNode extends BaseImageNode {
             const img = element.querySelector('img');
             if (img) {
                 img.style.maxWidth = `${maxWidthPx}px`;
-                img.style.margin = '0 auto';
                 img.style.display = 'block';
+                if (imageAlignment === 'left') {
+                    img.style.margin = '0 auto 0 0';
+                } else if (imageAlignment === 'right') {
+                    img.style.margin = '0 0 0 auto';
+                } else {
+                    img.style.margin = '0 auto';
+                }
+            }
+            if (imageAlignment === 'left' || imageAlignment === 'right') {
+                element.setAttribute('data-kg-image-align', imageAlignment);
+                const existingClass = element.getAttribute('class') || '';
+                const newClass = `${existingClass} kg-image-align-${imageAlignment}`.trim();
+                element.setAttribute('class', newClass);
+            }
+        }
+
+        // Focal point is independent of maxWidthPx — it applies whenever a
+        // downstream theme crops the image, regardless of size constraints.
+        if (element && focalPoint && element.tagName === 'FIGURE') {
+            element.setAttribute('data-kg-focal-point', `${focalPoint.x},${focalPoint.y}`);
+            const img = element.querySelector('img');
+            if (img) {
+                img.style.objectPosition = `${focalPoint.x}% ${focalPoint.y}%`;
             }
         }
 
@@ -218,10 +321,20 @@ export class ImageNode extends BaseImageNode {
                 conversion(domNode) {
                     const result = originalConversion(domNode);
                     if (result?.node && typeof domNode.getAttribute === 'function') {
-                        const raw = domNode.getAttribute('data-kg-max-width');
-                        const normalized = normalizeMaxWidthPx(raw);
-                        if (normalized !== null) {
-                            result.node.__maxWidthPx = normalized;
+                        const rawMaxWidth = domNode.getAttribute('data-kg-max-width');
+                        const normalizedMaxWidth = normalizeMaxWidthPx(rawMaxWidth);
+                        if (normalizedMaxWidth !== null) {
+                            result.node.__maxWidthPx = normalizedMaxWidth;
+                        }
+                        const rawAlignment = domNode.getAttribute('data-kg-image-align');
+                        const normalizedAlignment = normalizeImageAlignment(rawAlignment);
+                        if (normalizedAlignment !== null) {
+                            result.node.__imageAlignment = normalizedAlignment;
+                        }
+                        const rawFocalPoint = domNode.getAttribute('data-kg-focal-point');
+                        const normalizedFocalPoint = normalizeFocalPoint(rawFocalPoint);
+                        if (normalizedFocalPoint !== null) {
+                            result.node.__focalPoint = normalizedFocalPoint;
                         }
                     }
                     return result;
@@ -245,7 +358,9 @@ export class ImageNode extends BaseImageNode {
                             altText={this.__alt}
                             captionEditor={this.__captionEditor}
                             captionEditorInitialState={this.__captionEditorInitialState}
+                            focalPoint={this.__focalPoint}
                             href={this.href}
+                            imageAlignment={this.__imageAlignment}
                             initialFile={this.__initialFile}
                             maxWidthPx={this.__maxWidthPx}
                             nodeKey={this.getKey()}

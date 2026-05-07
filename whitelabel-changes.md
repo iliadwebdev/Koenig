@@ -107,6 +107,112 @@ upstream regular/wide/full preset buttons. Persists `maxWidthPx` on the
 > `data-kg-max-width` for email/site rendering. Coordinated via the
 > consumer repo's `whitelabel-changes.md` §14.
 
+#### 3a. Image alignment (left / center / right) for max-width images
+
+Adds left/center/right alignment for images, parallel to text alignment
+(§4). Center is the implicit default. The control only matters when
+`maxWidthPx` is set — without it the image fills the figure and alignment
+has nothing to act on — so the toolbar buttons are gated on `maxWidthPx`.
+
+- [packages/koenig-lexical/src/nodes/ImageNode.jsx](packages/koenig-lexical/src/nodes/ImageNode.jsx)
+  — adds `imageAlignment` (`'left' | 'right' | null`, where `null`
+  means "default center"). Wired through `exportJSON` / `importJSON` /
+  `exportDOM` / `importDOM` / `getDataset`. `normalizeImageAlignment`
+  collapses `'center'`, `''`, `undefined`, and unknown values to `null`
+  so the default never gets persisted or emitted.
+- `exportDOM` emits **on the `<figure>**: `data-kg-image-align="left|right"`
+  and class `kg-image-align-<value>` (only for non-default values). **On
+  the `<img>`**: `margin: 0 auto 0 0` for left, `margin: 0 0 0 auto` for
+  right, `margin: 0 auto` for center — so the override works without site
+  CSS. The block stays gated on `maxWidthPx` for the same caption-squish
+  reason as §3.
+- `importDOM` reads `data-kg-image-align` off the `<figure>` and
+  normalizes; round-trips through Ghost's HTML pipeline.
+- [packages/koenig-lexical/src/nodes/ImageNodeComponent.jsx](packages/koenig-lexical/src/nodes/ImageNodeComponent.jsx)
+  — `handleImageAlignmentChange` setter; three new
+  `ToolbarMenuItem`s (`alignLeft`, `alignCenter`, `alignRight`) added
+  after the max-width input, all hidden when `maxWidthPx` is null/empty.
+  Clicking "center" sets `null` so the JSON stays clean for the common
+  case. Reuses the existing align icons from `ToolbarMenu.TOOLBAR_ICONS`.
+- [packages/koenig-lexical/src/components/ui/cards/ImageCard.jsx](packages/koenig-lexical/src/components/ui/cards/ImageCard.jsx)
+  — applies the same `data-kg-image-align` + `kg-image-align-*` class
+  hooks on the `<figure>` for WYSIWYG, and switches the `<img>`'s Tailwind
+  margin class between `mr-auto` / `ml-auto` / `mx-auto` so the in-editor
+  view matches the published HTML.
+- Tests:
+  - [packages/koenig-lexical/test/unit/imageNode.test.js](packages/koenig-lexical/test/unit/imageNode.test.js)
+    — new `imageAlignment serialization` describe block plus extensions
+    to `exportDOM` / `importDOM` blocks.
+  - [packages/koenig-lexical/test/e2e/cards/image-card.test.js](packages/koenig-lexical/test/e2e/cards/image-card.test.js)
+    — new `toolbar align buttons set imageAlignment on the figure when
+    max-width is set` test covering visibility gating, left/right/center
+    cycling, and re-hiding when max-width is cleared.
+
+> Downstream Ghost backend `image-renderer.js` should treat
+> `data-kg-image-align` and the matching `kg-image-align-*` class as
+> stable hooks (parallel to `data-kg-max-width`).
+
+#### 3b. Image focal point
+
+Adds a focal-point picker to the image toolbar so authors can choose
+which point of an image stays in frame when a downstream theme crops it
+(typical for `object-fit: cover` boxes — hero images, OG cards, related-
+post thumbnails). The point is stored as `{x, y}` percentages and emitted
+as inline `object-position` on the `<img>` plus `data-kg-focal-point` on
+the `<figure>`. Independent of `maxWidthPx` (focal point applies whenever
+something crops, not only when the image is constrained).
+
+- [packages/koenig-lexical/src/nodes/ImageNode.jsx](packages/koenig-lexical/src/nodes/ImageNode.jsx)
+  — adds `focalPoint` (`{x, y} | null`, percentages 0–100). Wired through
+  `exportJSON` / `importJSON` / `exportDOM` / `importDOM` / `getDataset`.
+  `normalizeFocalPoint` accepts `{x,y}` objects, `[x,y]` arrays, and
+  `"x,y"` strings; rounds each axis to one decimal; collapses the
+  implicit center `{50,50}` to `null` (mirrors the `imageAlignment`
+  default-collapse rule) so the default never round-trips.
+- `exportDOM` emits **on the `<figure>**: `data-kg-focal-point="X,Y"`.
+  **On the `<img>`**: inline `object-position: X% Y%`. No `object-fit`
+  is set — the editor doesn't crop, and forcing it would conflict with
+  upstream layout. The downstream theme decides whether to crop.
+- `importDOM` reads `data-kg-focal-point` off the `<figure>`; round-trips
+  through Ghost's HTML pipeline.
+- [packages/koenig-lexical/src/nodes/ImageNodeComponent.jsx](packages/koenig-lexical/src/nodes/ImageNodeComponent.jsx)
+  — `handleFocalPointChange` setter; new `ToolbarMenuItem` (`focalPoint`
+  icon) added after the alignment buttons; opens a sibling
+  `<ActionToolbar>` hosting the new `FocalPointPicker`. Hidden for GIFs.
+  The main toolbar's visibility gate now also excludes `showFocalPoint`
+  to prevent both toolbars rendering at once.
+- [packages/koenig-lexical/src/components/ui/cards/ImageCard.jsx](packages/koenig-lexical/src/components/ui/cards/ImageCard.jsx)
+  — applies `object-position` to the WYSIWYG `<img>` and
+  `data-kg-focal-point` on the `<figure>` so the in-editor view matches
+  published HTML.
+- [packages/koenig-lexical/src/components/ui/FocalPointPicker.jsx](packages/koenig-lexical/src/components/ui/FocalPointPicker.jsx)
+  *(new)* — popover with click-and-drag image preview, crosshair marker,
+  Reset/Done buttons. Closes on outside click or Escape. Default-state
+  marker is shown muted at center to convey "no override".
+- [packages/koenig-lexical/src/components/ui/ToolbarMenu.jsx](packages/koenig-lexical/src/components/ui/ToolbarMenu.jsx)
+  — registers the new `focalPoint` icon in `TOOLBAR_ICONS`.
+- [packages/koenig-lexical/src/assets/icons/kg-focal-point.svg](packages/koenig-lexical/src/assets/icons/kg-focal-point.svg)
+  *(new)* — 24×24 crosshair-in-circle, `currentColor` strokes to match
+  the existing toolbar icon style.
+- Tests:
+  - [packages/koenig-lexical/test/unit/imageNode.test.js](packages/koenig-lexical/test/unit/imageNode.test.js)
+    — new `focalPoint serialization` describe block (defaults, clamp,
+    rounding, default-collapse, malformed-input handling, round-trip,
+    clone, setter normalization) plus `exportDOM`/`importDOM`
+    extensions.
+  - [packages/koenig-lexical/test/e2e/cards/image-card.test.js](packages/koenig-lexical/test/e2e/cards/image-card.test.js)
+    — new test opens the picker, clicks the preview off-center, asserts
+    `data-kg-focal-point` + `object-position` are emitted, then resets
+    and asserts they're cleared.
+
+> Downstream Ghost backend `image-renderer.js` should treat
+> `data-kg-focal-point` as a stable hook (parallel to `data-kg-max-width`
+> and `data-kg-image-align`). The shape is frozen as `{x, y}` percentages
+> 0–100 and the default-center `{50,50}` collapses to `null` everywhere —
+> see the **Coordination contract for feature-image focal point** section
+> below for the full data shape and a port path for the matching feature-
+> image picker in Ghost Admin.
+
 ### 4. Text alignment for paragraphs and headings
 
 Re-introduces `kg-align-center` / `kg-align-right` classes (Ghost's classic
@@ -238,6 +344,16 @@ videos and 1:1 for everything else (album artwork tends to be square).
 - [ ] No `rgba(48,207,67` or `#30CF43` literals in the built CSS / JS.
 - [ ] Image toolbar shows regular/wide/full **and** the numeric
       max-width input.
+- [ ] After setting `maxWidthPx`, the toolbar shows three image-align
+      buttons; clicking left/right adds
+      `data-kg-image-align="..."` + `kg-image-align-...` class on the
+      `<figure>`; clicking center clears them. Clearing `maxWidthPx`
+      hides the buttons.
+- [ ] Image toolbar shows a focal-point button; clicking opens a picker
+      that lets you click/drag on the image preview. After Done, the
+      `<figure>` has `data-kg-focal-point="X,Y"` and the inner `<img>`
+      has inline `object-position: X% Y%`. Reset clears both. Focal-point
+      button is hidden for GIFs.
 - [ ] Pasting `<p style="text-align:center">` or
       `<p class="kg-align-center">` keeps the centering in the editor
       and round-trips through `kg-lexical-html-renderer` to
@@ -248,3 +364,58 @@ videos and 1:1 for everything else (album artwork tends to be square).
 - [ ] `yarn workspace @iliad.dev/koenig-lexical test:e2e` passes.
 - [ ] `.github/workflows/iliad-release.yml` still present and untouched
       (or intentionally updated).
+
+## Coordination contract for feature-image focal point
+
+Koenig owns post-body image cards (see §3b above). The post's
+`feature_image` (article-header / OG card) is **not** in this repo —
+it lives in Ghost Admin's post-settings sidebar and the Ghost backend's
+`posts` table, in your separate forks. Cropped feature images are
+typically the highest-impact place for focal-point control. To keep the
+matching work in those repos consistent with §3b, the contract is frozen
+here so the downstream effort is a port, not a redesign.
+
+### Frozen data shape
+
+```json
+{ "x": 30.0, "y": 70.0 }
+```
+
+- Both axes are floats clamped `[0, 100]`, rounded to one decimal place.
+- `null` (or omission) means "no focal point set" — downstream renderers
+  must treat `null` as default-center behavior and emit no
+  `object-position`.
+- `{x: 50, y: 50}` collapses to `null` everywhere (Koenig normalizer,
+  Ghost Admin form serialization, Ghost backend serializer) so the
+  default never round-trips.
+
+### Frozen attribute / column names
+
+| Surface | Name | Notes |
+|---|---|---|
+| Body image figure attribute | `data-kg-focal-point="X,Y"` | Set in §3b. |
+| Body image inline style | `style="object-position: X% Y%"` on `<img>` | Set in §3b. |
+| Posts table column | `feature_image_focal_point` (JSON or `varchar` `"x,y"`) | Suggested for the Ghost backend fork. JSON preferable for clarity. |
+| Post API JSON | `feature_image_focal_point: {x, y} \| null` | Whatever the column type, the API exposes the parsed object. |
+| Rendered feature image | `style="object-position: X% Y%"` on the `<img>` produced by the theme helper | Same CSS hook as body images. |
+
+### Frozen UX
+
+The Ghost Admin feature-image picker should mirror this repo's
+[`FocalPointPicker.jsx`](packages/koenig-lexical/src/components/ui/FocalPointPicker.jsx)
+— click/drag to set, crosshair marker, Reset/Done buttons, default-state
+muted center marker, Atlas purple accent. If the Admin fork is built in
+Ember and can't reuse the React component, port the interaction model
+verbatim.
+
+### Out of scope here
+
+- `posts` table migration to add `feature_image_focal_point`.
+- Ghost Admin sidebar UI for the feature-image picker.
+- Theme helper update (`{{img_url ...}}` or equivalent) to emit
+  `object-position` for feature images.
+- Backfill — none needed, `null` behaves identically to today.
+
+> Any divergence in the contract should be made **here first**, then
+> ported to the Admin/backend forks. The contract version is implicitly
+> tied to the §3b implementation in this repo.

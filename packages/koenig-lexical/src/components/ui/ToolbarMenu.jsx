@@ -5,6 +5,7 @@ import AlignRightIcon from '../../assets/icons/kg-align-right.svg?react';
 import BoldIcon from '../../assets/icons/kg-bold.svg?react';
 import EditIcon from '../../assets/icons/kg-edit.svg?react';
 import EyeIcon from '../../assets/icons/kg-eye.svg?react';
+import FocalPointIcon from '../../assets/icons/kg-focal-point.svg?react';
 import HeadingThreeIcon from '../../assets/icons/kg-heading-3.svg?react';
 import HeadingTwoIcon from '../../assets/icons/kg-heading-2.svg?react';
 import ImgFullIcon from '../../assets/icons/kg-img-full.svg?react';
@@ -38,6 +39,7 @@ export const TOOLBAR_ICONS = {
     imgWide: ImgWideIcon,
     imgFull: ImgFullIcon,
     imgReplace: ImgReplaceIcon,
+    focalPoint: FocalPointIcon,
     add: AddIcon,
     edit: EditIcon,
     wand: WandIcon,

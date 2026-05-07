@@ -180,7 +180,10 @@ test.describe('Image card', async () => {
             alt: '',
             caption: '',
             cardWidth: 'regular',
-            href: ''
+            href: '',
+            maxWidthPx: null,
+            imageAlignment: null,
+            focalPoint: null
         },{
             children: [],
             direction: null,
@@ -532,6 +535,104 @@ test.describe('Image card', async () => {
         await input.press('Enter');
 
         await expect(page.locator('figure[data-kg-max-width]')).toHaveCount(0);
+    });
+
+    test('toolbar align buttons set imageAlignment on the figure when max-width is set', async function () {
+        const filePath = path.relative(process.cwd(), __dirname + '/../fixtures/large-image.png');
+
+        await insertEmptyImageCard(page);
+
+        const [fileChooser] = await Promise.all([
+            page.waitForEvent('filechooser'),
+            await page.click('button[name="placeholder-button"]')
+        ]);
+        await fileChooser.setFiles([filePath]);
+
+        await expect(await page.getByTestId('image-card-populated')).toBeVisible();
+        await expect(await page.getByTestId('progress-bar')).toBeHidden();
+
+        await page.click('[data-kg-card="image"]');
+
+        // align buttons are hidden until maxWidthPx is set
+        await expect(page.locator('[data-testid="image-align-left"]')).toBeHidden();
+
+        const input = page.locator('[data-testid="image-max-width-input"]');
+        await input.fill('400');
+        await input.press('Enter');
+
+        // now visible — center is the implicit default
+        await expect(page.locator('[data-testid="image-align-center"]')).toBeVisible();
+        await expect(page.locator('figure[data-kg-image-align]')).toHaveCount(0);
+
+        await page.click('[data-testid="image-align-left"]');
+        await expect(page.locator('figure[data-kg-image-align="left"]')).toBeVisible();
+        await expect(page.locator('figure.kg-image-align-left')).toBeVisible();
+
+        await page.click('[data-testid="image-align-right"]');
+        await expect(page.locator('figure[data-kg-image-align="right"]')).toBeVisible();
+
+        await page.click('[data-testid="image-align-center"]');
+        // center collapses back to no attribute / no class
+        await expect(page.locator('figure[data-kg-image-align]')).toHaveCount(0);
+
+        // clearing the max-width hides the align buttons again
+        await input.fill('');
+        await input.press('Enter');
+        await expect(page.locator('[data-testid="image-align-left"]')).toBeHidden();
+    });
+
+    test('toolbar focal-point button persists object-position on the img and data-kg-focal-point on the figure', async function () {
+        const filePath = path.relative(process.cwd(), __dirname + '/../fixtures/large-image.png');
+
+        await insertEmptyImageCard(page);
+
+        const [fileChooser] = await Promise.all([
+            page.waitForEvent('filechooser'),
+            await page.click('button[name="placeholder-button"]')
+        ]);
+        await fileChooser.setFiles([filePath]);
+
+        await expect(await page.getByTestId('image-card-populated')).toBeVisible();
+        await expect(await page.getByTestId('progress-bar')).toBeHidden();
+
+        await page.click('[data-kg-card="image"]');
+
+        // open the focal point picker
+        await page.click('[data-testid="image-focal-point"]');
+        const picker = page.getByTestId('focal-point-picker');
+        await expect(picker).toBeVisible();
+
+        // click somewhere in the upper-left quadrant of the image preview
+        const previewImage = picker.locator('img');
+        const box = await previewImage.boundingBox();
+        await page.mouse.click(box.x + box.width * 0.25, box.y + box.height * 0.75);
+
+        // marker moved off the default-center position
+        const markerStyle = await page.getByTestId('focal-point-marker').getAttribute('style');
+        expect(markerStyle).toContain('left:');
+        expect(markerStyle).toContain('top:');
+
+        // close the picker
+        await page.click('[data-testid="focal-point-done"]');
+        await expect(picker).toBeHidden();
+
+        // figure has data-kg-focal-point and the inner img has object-position
+        const figure = page.locator('figure[data-kg-focal-point]');
+        await expect(figure).toBeVisible();
+        const figureFocal = await figure.getAttribute('data-kg-focal-point');
+        expect(figureFocal).toMatch(/^\d+(\.\d+)?,\d+(\.\d+)?$/);
+
+        const cardImg = figure.locator('img[data-testid="image-card-populated"]');
+        const imgStyle = await cardImg.getAttribute('style');
+        expect(imgStyle).toContain('object-position');
+
+        // open picker again, click Reset, focal-point should be cleared
+        await page.click('[data-kg-card="image"]');
+        await page.click('[data-testid="image-focal-point"]');
+        await page.click('[data-testid="focal-point-reset"]');
+        await page.click('[data-testid="focal-point-done"]');
+
+        await expect(page.locator('figure[data-kg-focal-point]')).toHaveCount(0);
     });
 
     test('toolbar does not disappear when entering max-width', async function () {
