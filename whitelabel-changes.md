@@ -184,6 +184,53 @@ persisted (no `kg-align-left` class is emitted, and the transform strips
   adds `default text alignment (left) is normalized away on paste`, and
   adds `text alignment is preserved from kg-align-* class on paste`.
 
+### 5. Email-safe fallback for non-video embeds
+
+Upstream's embed renderer only produces an email-safe fallback when
+`embedType === 'video'`. Every other oEmbed `type: 'rich'` (Spotify,
+SoundCloud, Apple Music, Mixcloud, Bandcamp, CodePen, Instagram, GitHub
+Gist, Reddit, etc.) falls through to the default branch, which emits the
+provider's raw `<iframe>` HTML. Ghost's email pipeline strips iframes, so
+the embed arrives in the inbox as nothing.
+
+This change extends the email branch with a three-way decision:
+
+1. **Playable thumbnail (image + play-button overlay)** — when
+   `embedType === 'video'` *or* `metadata.provider_name` is in the
+   `PLAYABLE_MEDIA_PROVIDERS` allow-list (Spotify / SoundCloud / Apple
+   Music / Mixcloud / Bandcamp), and `metadata.thumbnail_url` is present.
+   Reuses the existing video MSO/VML template; the `aria-label` toggles
+   between "Play video" and "Play media".
+2. **Plain thumbnail with link** — any other embed with
+   `metadata.thumbnail_url`. Linked image inside a `kg-embed-thumbnail`
+   anchor, no play-button overlay.
+3. **Bookmark-style text card** — when no thumbnail is available. Mirrors
+   the bookmark renderer's `<!--[if !mso !vml]-->` / `<![endif]-->`
+   conditional-comment structure so Outlook also gets a usable layout.
+   Populated from `metadata.title`, `metadata.provider_name`,
+   `metadata.author_name`, and `node.url`.
+
+All metadata used in the templates is now run through `escapeHtml`
+(provider responses are not trusted input). When `thumbnail_width` /
+`thumbnail_height` are missing, the aspect ratio defaults to 16:9 for
+videos and 1:1 for everything else (album artwork tends to be square).
+
+- [packages/kg-default-nodes/lib/nodes/embed/embed-renderer.js](packages/kg-default-nodes/lib/nodes/embed/embed-renderer.js)
+  — extended `renderTemplate` with the three-way email branch; added
+  `PLAYABLE_MEDIA_PROVIDERS` set, `isPlayableMediaProvider`,
+  `getThumbnailAspectRatio`, and three template helpers
+  (`playableThumbnailTemplate`, `thumbnailLinkTemplate`,
+  `bookmarkFallbackTemplate`). Web rendering path is untouched.
+- [packages/kg-default-nodes/test/nodes/embed.test.js](packages/kg-default-nodes/test/nodes/embed.test.js)
+  — adds four new email-rendering tests: Spotify with thumbnail (playable
+  template), generic rich embed with thumbnail (plain template), rich
+  embed without thumbnail (bookmark fallback), and an escaping check.
+
+> Out of scope: the matching gap in the legacy mobiledoc card at
+> [packages/kg-default-cards/src/cards/embed.ts](packages/kg-default-cards/src/cards/embed.ts).
+> If old mobiledoc-format posts also need fixing, port the same
+> three-way branch there.
+
 ## Smoke checklist after an upstream merge
 
 - [ ] `window['@tryghost/koenig-lexical']` is defined in the built UMD

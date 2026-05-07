@@ -341,6 +341,106 @@ describe('EmbedNode', function () {
             element.outerHTML.should.containEql('<v:group xmlns');
         }));
 
+        it('renders spotify embed with thumbnail and play-button overlay for email', editorTest(function () {
+            const options = {target: 'email'};
+            const embedNode = $createEmbedNode({
+                url: 'https://open.spotify.com/track/abc123',
+                embedType: 'rich',
+                html: '<iframe src="https://open.spotify.com/embed/track/abc123"></iframe>',
+                metadata: {
+                    provider_name: 'Spotify',
+                    provider_url: 'https://spotify.com',
+                    thumbnail_url: 'https://i.scdn.co/image/abc.jpg',
+                    thumbnail_width: 640,
+                    thumbnail_height: 640,
+                    title: 'Some Track',
+                    author_name: 'Some Artist',
+                    type: 'rich',
+                    version: '1.0'
+                }
+            });
+            const {element} = embedNode.exportDOM({...exportOptions, ...options});
+
+            element.outerHTML.should.containEql('<a class="kg-video-preview" href="https://open.spotify.com/track/abc123"');
+            element.outerHTML.should.containEql('https://i.scdn.co/image/abc.jpg');
+            element.outerHTML.should.containEql('kg-video-play-button');
+            element.outerHTML.should.containEql('<!--[if vml]>');
+            element.outerHTML.should.not.containEql('<iframe');
+        }));
+
+        it('renders generic rich embed with thumbnail (no play overlay) for email', editorTest(function () {
+            const options = {target: 'email'};
+            const embedNode = $createEmbedNode({
+                url: 'https://codepen.io/example/pen/abcd',
+                embedType: 'rich',
+                html: '<iframe src="https://codepen.io/example/embed/abcd"></iframe>',
+                metadata: {
+                    provider_name: 'CodePen',
+                    provider_url: 'https://codepen.io',
+                    thumbnail_url: 'https://codepen.io/example/thumb.jpg',
+                    thumbnail_width: 800,
+                    thumbnail_height: 450,
+                    title: 'A Pen',
+                    author_name: 'Example',
+                    type: 'rich',
+                    version: '1.0'
+                }
+            });
+            const {element} = embedNode.exportDOM({...exportOptions, ...options});
+
+            element.outerHTML.should.containEql('<a class="kg-embed-thumbnail" href="https://codepen.io/example/pen/abcd"');
+            element.outerHTML.should.containEql('https://codepen.io/example/thumb.jpg');
+            element.outerHTML.should.not.containEql('kg-video-play-button');
+            element.outerHTML.should.not.containEql('<iframe');
+        }));
+
+        it('renders bookmark-style fallback for rich embed without thumbnail in email', editorTest(function () {
+            const options = {target: 'email'};
+            const embedNode = $createEmbedNode({
+                url: 'https://example.com/some-thing',
+                embedType: 'rich',
+                html: '<iframe src="https://example.com/embed/some-thing"></iframe>',
+                metadata: {
+                    provider_name: 'Example',
+                    title: 'A Thing on Example',
+                    author_name: 'Some Author',
+                    type: 'rich',
+                    version: '1.0'
+                }
+            });
+            const {element} = embedNode.exportDOM({...exportOptions, ...options});
+
+            element.outerHTML.should.containEql('<a class="kg-bookmark-container" href="https://example.com/some-thing">');
+            element.outerHTML.should.containEql('A Thing on Example');
+            element.outerHTML.should.containEql('Example');
+            element.outerHTML.should.containEql('Some Author');
+            element.outerHTML.should.containEql('kg-bookmark-card--outlook');
+            element.outerHTML.should.not.containEql('<iframe');
+        }));
+
+        it('escapes provider-supplied url and metadata in email fallback', editorTest(function () {
+            const options = {target: 'email'};
+            const embedNode = $createEmbedNode({
+                url: 'https://example.com/track?a=1&b=2',
+                embedType: 'rich',
+                html: '<iframe></iframe>',
+                metadata: {
+                    provider_name: 'Spotify',
+                    thumbnail_url: 'https://example.com/img.jpg?w=1&h=1',
+                    thumbnail_width: 640,
+                    thumbnail_height: 640,
+                    title: 'Track <"Name">',
+                    type: 'rich',
+                    version: '1.0'
+                }
+            });
+            const {element} = embedNode.exportDOM({...exportOptions, ...options});
+
+            element.outerHTML.should.containEql('https://example.com/track?a=1&amp;b=2');
+            element.outerHTML.should.containEql('https://example.com/img.jpg?w=1&amp;h=1');
+            element.outerHTML.should.not.containEql('Track <"Name">');
+        }));
+
         it('renders empty span with missing data', editorTest(function () {
             const embedNode = $createEmbedNode();
             const {element} = embedNode.exportDOM(exportOptions);
