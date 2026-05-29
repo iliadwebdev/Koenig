@@ -140,8 +140,8 @@ export function ToolbarMenuInput({
     };
 
     return (
-        <li className="group relative m-0 flex items-center p-0 first:m-0">
-            <label aria-label={label} className="my-1 flex h-8 items-center rounded-md bg-white px-2 dark:bg-grey-950">
+        <li className="group relative m-0 flex shrink-0 items-center p-0 first:m-0">
+            <label aria-label={label} className="my-1 flex h-8 items-center whitespace-nowrap rounded-md bg-white px-2 dark:bg-grey-950">
                 <input
                     aria-label={label}
                     className="w-12 bg-transparent text-center text-sm text-black outline-none placeholder:text-grey-500 dark:text-white"

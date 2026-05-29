@@ -34,11 +34,13 @@ export function FocalPointPicker({src, alt, value, onChange, onClose}) {
 
     const handleMouseDown = (e) => {
         e.preventDefault();
+        e.stopPropagation();
         setIsDragging(true);
         updateFromClientPos(e.clientX, e.clientY);
     };
 
     const handleTouchStart = (e) => {
+        e.stopPropagation();
         if (e.touches.length === 0) {
             return;
         }
@@ -101,6 +103,8 @@ export function FocalPointPicker({src, alt, value, onChange, onClose}) {
             ref={containerRef}
             className="relative m-0 flex flex-col items-stretch gap-2 rounded-lg bg-white p-2 font-sans text-md font-normal text-black shadow-md dark:bg-grey-950 dark:text-grey-200"
             data-testid="focal-point-picker"
+            onMouseDown={e => e.stopPropagation()}
+            onTouchStart={e => e.stopPropagation()}
         >
             <div
                 className="relative max-w-[280px] cursor-crosshair select-none overflow-hidden rounded"

@@ -102,6 +102,11 @@ upstream regular/wide/full preset buttons. Persists `maxWidthPx` on the
     — preset-click test (upstream) **and** new numeric-input test.
   - [packages/koenig-lexical/test/e2e/editors/email-editor.test.js](packages/koenig-lexical/test/e2e/editors/email-editor.test.js)
     — asserts presets hidden + numeric input visible in the email editor.
+- [packages/koenig-lexical/src/components/ui/ToolbarMenu.jsx](packages/koenig-lexical/src/components/ui/ToolbarMenu.jsx)
+  — `ToolbarMenuInput` `<li>` adds `shrink-0` and `<label>` adds
+  `whitespace-nowrap` so the numeric input + `px` suffix don't visually
+  wrap or overflow when the floating toolbar tightens. Pure className
+  change; no behavioral effect on the input itself.
 
 > Downstream consumers (Ghost backend `image-renderer.js`) read
 > `data-kg-max-width` for email/site rendering. Coordinated via the
@@ -189,6 +194,10 @@ something crops, not only when the image is constrained).
   *(new)* — popover with click-and-drag image preview, crosshair marker,
   Reset/Done buttons. Closes on outside click or Escape. Default-state
   marker is shown muted at center to convey "no override".
+  `handleMouseDown`/`handleTouchStart` and the popover root call
+  `stopPropagation()` so click-and-drag inside the picker doesn't bubble to
+  the Lexical editor / parent `ImageCard` (would otherwise shift selection
+  or initiate card drag during a focal-point drag).
 - [packages/koenig-lexical/src/components/ui/ToolbarMenu.jsx](packages/koenig-lexical/src/components/ui/ToolbarMenu.jsx)
   — registers the new `focalPoint` icon in `TOOLBAR_ICONS`.
 - [packages/koenig-lexical/src/assets/icons/kg-focal-point.svg](packages/koenig-lexical/src/assets/icons/kg-focal-point.svg)
